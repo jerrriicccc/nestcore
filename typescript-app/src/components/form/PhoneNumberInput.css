@@ -1,0 +1,33 @@
+.custom-phone-input {
+    display: flex;
+    border: 1px solid lightgray;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
+    padding: 8px 12px;
+    height: 55px;
+}
+
+.custom-phone-input input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: rgb(0, 0, 0);
+    font-size: 1rem;
+    flex: 1;
+}
+
+.custom-phone-input .PhoneInputCountry {
+    margin-right: 10px;
+}
+
+.custom-phone-input .PhoneInputCountrySelect {
+    background: transparent;
+    border: none;
+    color: rgb(0, 0, 0);
+}
+
+.custom-phone-input .PhoneInputCountryIcon {
+    width: 1.5em;
+    height: 1em;
+}

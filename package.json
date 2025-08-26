@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "nestjs-typeorm-paginate": "^4.1.0"
+  }
+}
