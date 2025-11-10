@@ -80,7 +80,31 @@ const RoleAccessForm = ({ data = { name: "", typeid: "", accesskey: "", access: 
         </Row>
         <Row>
           <Col md={4}>
-            <MultiSelectInput name="access" label="Access" data={data} onChange={(e: InputType) => onChange(e)} error={errors.access} options={selectOptions.access} selectProps={{ isMulti: true }} />
+            <MultiSelectInput
+              name="access"
+              label="Access"
+              data={{
+                ...data,
+                access: Array.isArray(data.access)
+                  ? data.access.map((label) => {
+                      const option = selectOptions.access.find((opt: any) => opt.label === label);
+                      return option ? option.value : label;
+                    })
+                  : [],
+              }}
+              onChange={(e: InputType) => {
+                // Convert values to labels before passing up
+                if (Array.isArray(e.value)) {
+                  const labelValues = (e.value as string[]).map((val) => selectOptions.access.find((opt: any) => opt.value === val)?.label || val);
+                  onChange({ ...e, value: labelValues });
+                } else {
+                  onChange(e);
+                }
+              }}
+              error={errors.access}
+              options={selectOptions.access}
+              selectProps={{ isMulti: true }}
+            />
           </Col>
           <Col md={4}>
             {/* <MultiSelectInput name="models" label="Models" data={data} onChange={(e: InputType) => onChange(e)} error={errors.models} options={selectOptions.model} selectProps={{ isMulti: true }} /> */}

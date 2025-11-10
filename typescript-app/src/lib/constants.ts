@@ -1,12 +1,13 @@
-// API URL for WEB
-export const APIURL = process.env.REACT_APP_API_URL || "http://localhost:3000";
+export const APIURL = "http://localhost:3000";
 
 export const ACCESS_TOKEN = (() => {
-  const token = sessionStorage.getItem("auth_token");
+  const token = sessionStorage.getItem("token");
   return token || "";
 })();
 
 export const RBAC_TREE: { [key: string]: string } = {
   // customers: "customers",
-  // users: "users",
+  // appointments: "appointments",
+  // rolelines: "rolelines",
+  // roles: "roles",
 };

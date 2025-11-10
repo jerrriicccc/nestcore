@@ -18,7 +18,7 @@ const Footer = () => {
           fontStyle: "italic",
         }}
       >
-        © {new Date().getFullYear()} <span style={{ fontFamily: '"Times New Roman", Times, serif', fontStyle: "italic" }}>PAWS & PALS</span>. All rights reserved.
+        © {new Date().getFullYear()} <span style={{ fontFamily: '"Times New Roman", Times, serif', fontStyle: "italic" }}>NEST CORE</span>. All rights reserved.
       </Typography>
     </Box>
   );

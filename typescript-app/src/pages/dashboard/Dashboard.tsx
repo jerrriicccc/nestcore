@@ -1,23 +1,23 @@
 import React from "react";
 import { Container, Row, Col, Card, Table, Badge } from "react-bootstrap";
 
-interface Appointment {
-  timeName: string;
-  petname: string;
-  date: string;
-  servicetype: string;
-}
+// interface Appointment {
+//   timeName: string;
+//   petname: string;
+//   date: string;
+//   servicetype: string;
+// }
 
-interface DashboardProps {
-  appointments: Appointment[];
-}
+// interface DashboardProps {
+//   appointments: Appointment[];
+// }
 
-const Dashboard: React.FC<DashboardProps> = ({ appointments }) => {
-  const totalAppointment = appointments.length;
+const Dashboard = () => {
+  // const totalAppointment = appointments.length;
 
   return (
-    <Container fluid className="p-4">
-      <Row className="mb-0">
+    <Container fluid className="">
+      {/* <Row className="mb-0">
         {[{ title: "Today’s Appointments", value: totalAppointment }].map((item, index) => (
           <Col xs={12} sm={6} md={3} className="mb-0" key={index}>
             <Card style={{ backgroundColor: "#E2C698", height: "auto", fontFamily: "Times New Roman, serif" }} text="dark">
@@ -30,36 +30,6 @@ const Dashboard: React.FC<DashboardProps> = ({ appointments }) => {
             </Card>
           </Col>
         ))}
-      </Row>
-
-      {/* <Row>
-        <Col>
-          <Card>
-            <Card.Body>
-              <Card.Title>Today's Appointments</Card.Title>
-              <Table striped bordered hover size="sm">
-                <thead>
-                  <tr>
-                    <th>Pet Name</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Service</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {appointments.map((data, i) => (
-                    <tr key={i}>
-                      <td>{data.petname}</td>
-                      <td>{data.date}</td>
-                      <td>{data.timeName}</td>
-                      <td>{data.servicetype}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
       </Row> */}
     </Container>
   );

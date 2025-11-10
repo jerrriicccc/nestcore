@@ -6,9 +6,9 @@ import RoleForm from "./RoleForm";
 import GlobalRecordAccessForm from "./GlobalRecordAccessForm";
 import ModuleAccessForm from "./ModuleAccessForm";
 import AuthorizationAlert from "../authorization/AuthorizationAlert";
-import { defaultState, navButtons, modelConfig, path, useLocalValidation } from "./PageSettings";
+import { defaultState, navButtons, modelConfig, path, useLocalValidation, modelConfigGetAllOptions, defStatAccessDetails } from "./PageSettings";
 import useModel from "../../lib/use-model";
-import { cardDataReducer } from "../../lib/functions";
+import { cardDataReducer, listDataReducer } from "../../lib/functions";
 import { useInitializeData, useDataById, useCardFormSubmitHandler, useUpdateField, useDataStatusListener } from "../../lib/use-datatool";
 import useGlobalRecordAccessModel from "../../models/use-globalrecordaccessmodel";
 import useRoleModel from "../../models/use-rolemodel";
@@ -49,10 +49,17 @@ const Controller = () => {
   const [role, roleModel, roleStatus] = useModel(path, defaultState, modelConfig, cardDataReducer);
   const updateRoleField = useUpdateField({ callbackFunction: roleModel.setData });
   const { dataState: globalRecordAccess, dataStatus: globalRecAccessStatus, ...globalRAccessModel } = useGlobalRecordAccessModel();
-  const [models, modelsModel] = useRoleModel();
+  // const [models, modelsModel] = useRoleModel();
 
   const { dataState: moduleAccess, dataStatus: moduleAccessStatus, ...moduleAccessModel } = useModuleAccessModel();
   // const [moduleOptions, moduleOptionsModel] = useRoleModel();
+
+  // getallaccessoption
+  const [getAllAccessOption, getAllAccessOptionModel, getAllAccessOptionStatus] = useModel(path, defStatAccessDetails, modelConfigGetAllOptions, listDataReducer);
+  // useInitializeData({
+  //   functionName: getAllAccessOptionModel.get,
+  //   args: "getallaccessoptions",
+  // });
 
   // Data Fetching Functions
   const getGlobalRAccess = () => {
@@ -82,23 +89,23 @@ const Controller = () => {
     }
   };
 
-  const getModelValues = (model: string) => {
-    if (!(model in models.data)) {
-      modelsModel.get({
-        action: "read",
-        requestData: { model: model },
-        dispatchRequest: true,
-      });
-    }
-  };
+  // const getModelValues = (model: string) => {
+  //   if (!(model in models.data)) {
+  //     modelsModel.get({
+  //       action: "read",
+  //       requestData: { model: model },
+  //       dispatchRequest: true,
+  //     });
+  //   }
+  // };
   const getModelValuesModule = (model: string) => {
-    if (!(model in moduleAccess.data)) {
-      moduleAccessModel.get({
-        action: "read",
-        requestData: { model: model },
-        dispatchRequest: true,
-      });
-    }
+    // if (!(model in moduleAccess.data)) {
+    //   moduleAccessModel.get({
+    //     action: "read",
+    //     requestData: { model: model },
+    //     dispatchRequest: true,
+    //   });
+    // }
   };
   // const getModelContents = () => {
   //   if (globalRecordAccess?.data?.length > 0) {
@@ -229,11 +236,11 @@ const Controller = () => {
     args: mode === "update" && id ? Number(id) : undefined,
   });
 
-  useEffect(() => {
-    if (mode === "update") {
-      getModelValues("Customer");
-    }
-  }, [mode]);
+  // useEffect(() => {
+  //   if (mode === "update") {
+  //     getModelValues("Customer");
+  //   }
+  // }, [mode]);
 
   useDataStatusListener({
     statusState: globalRecAccessStatus,
@@ -252,7 +259,25 @@ const Controller = () => {
   const rdata = Array.isArray(globalRecordAccess.data) ? globalRecordAccess.data : [];
   const mdata = Array.isArray(moduleAccess.data) ? moduleAccess.data : [];
 
-  console.log(mdata);
+  // Transform mdata availableOptions arrays into selectOptions format
+  // The availableOptions array contains the available choices that users can select from
+  const moduleSelectOptions = mdata.reduce((acc: Record<string, { value: string; label: string }[]>, item: any) => {
+    if (item.accesskey && Array.isArray(item.availableOptions)) {
+      // Use the availableOptions array as the available options
+      acc[item.accesskey.toLowerCase()] = item.availableOptions.map((value: string) => ({
+        value: value,
+        label: value, // Display the same value as label for now
+      }));
+    }
+    return acc;
+  }, {});
+
+  // Transform mdata to preserve existing selections or start with empty if no selections exist
+  const mdataWithEmptySelections = mdata.map((item: any) => ({
+    ...item,
+    availableOptions: item.availableOptions || [], // Available options from backend
+  }));
+
   return (
     <Fragment>
       <SubHeader title={`Role Form | ${mode.toUpperCase()}`} buttons={navButtons} actions={{ btnBack: handleBack }} />
@@ -267,13 +292,13 @@ const Controller = () => {
             data={rdata}
             actions={{
               onChange: globalRAccessOnChange,
-              onMenuOpen: getModelValues,
+              onMenuOpen: () => {},
             }}
-            selectOptions={{ customer: models.data.customer || [] }}
+            selectOptions={{}}
           />
         </Col>
       </Row>
-      <ModuleAccessForm data={mdata} actions={{ onChange: moduleAccessOnChange, onMenuOpen: getModelValuesModule }} selectOptions={{}} />
+      <ModuleAccessForm data={mdataWithEmptySelections} actions={{ onChange: moduleAccessOnChange, onMenuOpen: () => {} }} selectOptions={moduleSelectOptions} />
     </Fragment>
   );
 };

@@ -8,6 +8,9 @@ export const route = { list: "/roleslist" };
 export const defaultState = { data: { name: "" }, meta: {} };
 export const modelConfig = { read: "/getcard", update: "/updatecard", create: "/newcard" };
 
+export const defStatAccessDetails = { data: {}, meta: {} };
+export const modelConfigGetAllOptions = { read: "/getallaccessoptions" };
+
 export const globalRecordTable = {
   columns: [
     { label: "Model", id: "accesskey" },

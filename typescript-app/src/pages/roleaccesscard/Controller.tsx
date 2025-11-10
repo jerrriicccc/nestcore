@@ -35,10 +35,10 @@ const Controller = () => {
     args: "access",
   });
 
-  useInitializeData({
-    functionName: getModelOptionsStatus,
-    args: "model",
-  });
+  // useInitializeData({
+  //   functionName: getModelOptionsStatus,
+  //   args: "model",
+  // });
 
   const getRoleAccessById = useDataById({
     callbackFunction: roleAccessModel.get,

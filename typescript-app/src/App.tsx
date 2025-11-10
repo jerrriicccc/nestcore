@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 
 // Login
 const Login = lazy(() => import("./pages/authentication/Login"));
+const GitHubCallback = lazy(() => import("./pages/authentication/GitHubCallback"));
 const Dashboard = lazy(() => import("./pages/dashboard/Controller"));
 const Signup = lazy(() => import("./pages/authentication/Signup"));
 const SessionExpired = lazy(() => import("./pages/SessionExpired"));
@@ -27,7 +28,7 @@ const UserCard = lazy(() => import("./pages/usercard/Controller"));
 const Profile = lazy(() => import("./pages/profile/Controller"));
 
 // Appointment
-const Appointment = lazy(() => import("./pages/appointment/Controller"));
+const Appointment = lazy(() => import("./pages/appointmentlist/Controller"));
 const AppointmentCard = lazy(() => import("./pages/appointmentcard/Controller"));
 
 // Role
@@ -37,11 +38,8 @@ const RoleAccessList = lazy(() => import("./pages/roleaccesslist/Controller"));
 const RoleAccessCard = lazy(() => import("./pages/roleaccesscard/Controller"));
 
 // Services
-const GroomService = lazy(() => import("./pages/groomservice/Controller"));
-const DaycareService = lazy(() => import("./pages/daycareservice/Controller"));
 const ServiceSettingHome = lazy(() => import("./pages/servicesettinghome/Controller"));
 const AdditionalService = lazy(() => import("./pages/additionalservice/Controller"));
-const TimeSched = lazy(() => import("./pages/timeschedule/Controller"));
 const StatusCard = lazy(() => import("./pages/statuses/Controller"));
 const WorkflowSettCard = lazy(() => import("./pages/workflowsettings/Controller"));
 
@@ -77,7 +75,7 @@ const router = createBrowserRouter([
         </TitleProvider>
       </AuthProvider>
     ),
-    errorElement: "Page does not exist",
+    // errorElement: "Page does not exist",
     children: [
       {
         path: "*",
@@ -125,7 +123,7 @@ const router = createBrowserRouter([
       },
 
       {
-        path: "/appointments",
+        path: "/appointmentlist",
         element: (
           <ProtectedRoute>
             <SuspenseExt body={<Appointment />} />
@@ -173,34 +171,10 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/groomservice/:mode",
-        element: (
-          <ProtectedRoute>
-            <SuspenseExt body={<GroomService />} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/daycareservice/:mode",
-        element: (
-          <ProtectedRoute>
-            <SuspenseExt body={<DaycareService />} />
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: "/additionalservice/:mode",
         element: (
           <ProtectedRoute>
             <SuspenseExt body={<AdditionalService />} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/timeschedule/:mode",
-        element: (
-          <ProtectedRoute>
-            <SuspenseExt body={<TimeSched />} />
           </ProtectedRoute>
         ),
       },
@@ -269,6 +243,14 @@ const router = createBrowserRouter([
     element: (
       <AuthProvider>
         <SuspenseExt body={<VerifyFailed />} />
+      </AuthProvider>
+    ),
+  },
+  {
+    path: "/auth",
+    element: (
+      <AuthProvider>
+        <SuspenseExt body={<GitHubCallback />} />
       </AuthProvider>
     ),
   },

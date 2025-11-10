@@ -1,5 +1,5 @@
 import { APIURL, RBAC_TREE } from "./constants";
-import { getToken } from "./token-service";
+import { getToken, getRBACToken } from "./token-service";
 
 export interface RequestOptions {
   requestData?: any;
@@ -11,7 +11,7 @@ export interface RequestOptions {
 }
 
 const getLocalStore = (key: string) => {
-  return localStorage.getItem(key) === null ? "" : localStorage.getItem(key);
+  return sessionStorage.getItem(key) === null ? "" : sessionStorage.getItem(key);
 };
 
 export const getLocalToken = () => {
@@ -29,18 +29,7 @@ export function getDefaultHeaders(requestOptions: RequestOptions = {}) {
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
-    // If your backend expects X-Rbac-Token, you can add it here as well:
-    // headers["X-Rbac-Token"] = token;
   }
-
-  // let module = "customers";
-  // if (requestOptions.endpoint) {
-  //   const pathSegments = requestOptions.endpoint.split("/");
-  //   module = pathSegments[0] || "customers";
-  // }
-  // let rbacToken = localStorage.getItem(`RBAC-${module}`) || token || "";
-  // headers["X-Rbac-Token"] = `${module} ${rbacToken}`;
-  // // --- End x-rbac-token logic ---
 
   if (contentType === "form-data") {
     delete headers["Content-Type"];
@@ -57,7 +46,18 @@ export function getRBACHeader(header: Headers, path: string) {
   const pathSegments = path.split("/");
 
   const module = pathSegments.length > 1 ? getRBACModuleFromTree(pathSegments[1]) : "";
-  header.append("X-RBAC-Token", module + " " + getLocalStore(`RBAC-${module}`));
+
+  // Get the RBAC token for the specific module
+  const rbacToken = getRBACToken(module);
+
+  if (!rbacToken) {
+    console.warn(`No RBAC token found for module: ${module}`);
+    return header;
+  }
+
+  // Format the header as: "module rbacToken"
+  const rbacHeaderValue = `${module} ${rbacToken}`;
+  header.append("x-rbac-token", rbacHeaderValue);
   return header;
 }
 
@@ -132,38 +132,6 @@ export async function readData(endPoint: string, requestOptions: RequestOptions 
 
   return await sendHttpRequest(finalEndPoint, "GET", headers);
 }
-
-// export async function readData(endPoint: string, requestOptions: RequestOptions = {}) {
-//   const headers = getDefaultHeaders(requestOptions);
-
-//   // Handle query parameters
-//   let finalEndPoint = endPoint;
-//   if (requestOptions.requestData) {
-//     const queryParams = new URLSearchParams();
-//     Object.entries(requestOptions.requestData).forEach(([key, value]) => {
-//       if (value !== undefined && value !== null) {
-//         // Special handling for searchcond parameter
-//         if (key === "searchcond") {
-//           // If it's already a string, use it directly
-//           if (typeof value === "string") {
-//             queryParams.append(key, value);
-//           } else {
-//             // If it's an object, stringify it
-//             queryParams.append(key, JSON.stringify(value));
-//           }
-//         } else {
-//           queryParams.append(key, String(value));
-//         }
-//       }
-//     });
-//     const queryString = queryParams.toString();
-//     if (queryString) {
-//       finalEndPoint = `${endPoint}${endPoint.includes("?") ? "&" : "?"}${queryString}`;
-//     }
-//   }
-
-//   return await sendHttpRequest(finalEndPoint, "GET", headers);
-// }
 
 export async function createData(endPoint: string, requestOptions: RequestOptions = {}) {
   const headers = getDefaultHeaders(requestOptions);

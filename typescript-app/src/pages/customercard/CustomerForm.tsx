@@ -8,10 +8,6 @@ export interface CustomerData {
   firstname: string;
   lastname: string;
   statusid: number;
-  // gender?: string;
-  // country?: string;
-  // birthdate?: string;
-  // phonenumber?: string;
 }
 
 type InputType = {
@@ -33,9 +29,6 @@ const fieldLabels = {
   firstname: "First Name",
   lastname: "Last Name",
   statusid: "Status",
-  // country: "Country",
-  // birthdate: "Birthdate",
-  // phonenumber: "Phone Number",
 };
 
 const CustomerForm = ({ data = { firstname: "", lastname: "", statusid: 0 }, onChange, onSubmit, selectOptions }: CustomerFormProps) => {

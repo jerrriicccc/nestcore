@@ -1,5 +1,5 @@
 import { Form } from "react-bootstrap";
-import { MultiSelectInput, SelectInput } from "../../components/form/Input";
+import { MultiSelectInput, SelectInput } from "../../components/form/InputForm";
 import RegularTable from "../../components/table/RegularTable";
 import { globalRecordTable } from "./PageSettings";
 

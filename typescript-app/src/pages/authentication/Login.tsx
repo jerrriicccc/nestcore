@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Form, Alert, Spinner } from "react-bootstrap";
 import { TextInput, PasswordInput, PhoneNumberInput, DateInput } from "../../components/form/Input";
-import { setToken, isAuthenticated } from "../../lib/token-service";
+import { setToken, isAuthenticated, getToken } from "../../lib/token-service";
 import { APIURL } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
@@ -20,6 +20,7 @@ interface LoginSuccessResponse {
   status: "success";
   data: {
     access_token: string;
+    rbac_tokens: { [key: string]: string };
     user: {
       id: number;
       email: string;
@@ -154,13 +155,10 @@ const Login = () => {
         if ((data as LoginSuccessResponse).status === "success" && (data as LoginSuccessResponse).data?.access_token) {
           const loginData = data as LoginSuccessResponse;
 
-          // Use the updated token service
-          setToken(loginData.data.access_token);
+          // Use the updated token service with RBAC tokens
+          setToken(loginData.data.access_token, loginData.data.rbac_tokens);
 
-          // // Store user data in sessionStorage
-          // sessionStorage.setItem("user", JSON.stringify(loginData.data.user));
-
-          // Update auth context
+          // Update auth context (user data will be extracted from token)
           await checkAuthStatus();
 
           navigate("/dashboard", { replace: true });
@@ -229,6 +227,72 @@ const Login = () => {
     }
   };
 
+  const handleLoginViaIS = async () => {
+    try {
+      // If user is already logged in, this is an account linking flow
+      if (isAuthenticated()) {
+        // The backend /auth/github endpoint is protected by AuthGuard('jwt')
+        // It will automatically pick up the user's token from the Authorization header
+        window.location.assign(`${APIURL}/auth/github`);
+        return;
+      }
+
+      // First check if GitHub OAuth is configured
+      const token = getToken();
+      const configRes = await fetch(`${APIURL}/auth/github/config`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!configRes.ok) {
+        setFormError("GitHub OAuth is not available. Please use regular login.");
+        return;
+      }
+
+      const config = await configRes.json();
+
+      if (!config.hasClientId || !config.hasClientSecret) {
+        setFormError("GitHub OAuth is not configured. Please use regular login.");
+        return;
+      }
+
+      // If GitHub OAuth is configured, try to get the login URL
+      const res = await fetch(`${APIURL}/auth/github/login`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        setFormError("Failed to initiate GitHub login.");
+        return;
+      }
+
+      const data = await res.json();
+
+      // Check if the response indicates an error
+      if (data.status === "error") {
+        setFormError(data.message || "GitHub OAuth is not available. Please use regular login.");
+        return;
+      }
+
+      const url = data?.data?.access_uri || data?.data?.redirect_url || data?.access_uri || data?.redirect_url;
+
+      if (url) {
+        window.location.assign(url);
+      } else {
+        setFormError("Authorization URL not provided by server.");
+      }
+    } catch (err: any) {
+      setFormError("GitHub OAuth is not available. Please use regular login.");
+    }
+  };
+
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
       <Card style={{ width: "100%", maxWidth: "400px", padding: "20px" }}>
@@ -269,6 +333,12 @@ const Login = () => {
                 "Sign Up"
               )}
             </Button>
+
+            {isLogin && (
+              <Button variant="outline-secondary" type="button" className="w-100 mt-2" onClick={handleLoginViaIS} disabled={loading}>
+                {isAuthenticated() ? "Connect GitHub Account" : "Sign in with Github"}
+              </Button>
+            )}
 
             <div className="d-flex justify-content-center mt-3">
               {isLogin ? (

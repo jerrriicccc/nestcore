@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getToken } from "../../lib/token-service";
+import { getToken, getUserFromToken } from "../../lib/token-service";
 
 const AuthorizationAlert = () => {
   const navigate = useNavigate();
@@ -18,21 +18,15 @@ const AuthorizationAlert = () => {
         return;
       }
 
-      // Get user data from session storage
-      const userDataString = sessionStorage.getItem("user");
+      // Get user data from token
+      const userData = getUserFromToken();
 
-      if (userDataString) {
-        try {
-          const userData = JSON.parse(userDataString);
-
-          // Check if user has defaultroleid 1 (admin) - allow access to all routes
-          if (userData.defaultroleid === 1) {
-            setIsAuthorized(true);
-            setIsLoading(false);
-            return;
-          }
-        } catch (e) {
-          console.error("Error parsing user data:", e);
+      if (userData) {
+        // Check if user has defaultroleid 1 (admin) - allow access to all routes
+        if (userData.defaultroleid === 1) {
+          setIsAuthorized(true);
+          setIsLoading(false);
+          return;
         }
       }
 

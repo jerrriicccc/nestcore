@@ -16,7 +16,7 @@ export interface SidebarItem {
 
 export const DashboardItems: SidebarItem[] = [{ link: "/dashboard", caption: "Dashboard", icon: <DashboardIcon /> }];
 export const bookingMenuItems: SidebarItem[] = [
-  { link: "/appointments", caption: "List", icon: <FormatListBulletedIcon /> },
+  { link: "/appointmentlist", caption: "List", icon: <FormatListBulletedIcon /> },
   { link: "/appointmentsettings/create", caption: "Settings", icon: <FormatListBulletedIcon /> },
 ];
 export const servicesMenuItems: SidebarItem[] = [{ link: "/servicesettinghome", caption: "Settings", icon: <FormatListBulletedIcon /> }];

@@ -75,19 +75,7 @@ export default function AppBar({ toggleDrawer, toggleButtonRef }: AppBarProps) {
             // color: "",
           }}
         >
-          PAWS & PALS
-        </Typography>
-
-        <Typography variant="h6" noWrap sx={navItemStyle("/dashboard")} onClick={() => navigate("/dashboard")}>
-          Dashboard
-        </Typography>
-
-        <Typography variant="h6" noWrap sx={navItemStyle("/shoplist")} onClick={() => navigate("/shoplist")}>
-          Shop
-        </Typography>
-
-        <Typography variant="h6" noWrap sx={navItemStyle("/services")} onClick={() => navigate("/services")}>
-          Services
+          NEST CORE
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>

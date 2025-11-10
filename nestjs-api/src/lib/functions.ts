@@ -1,3 +1,5 @@
+import { query } from 'express';
+
 export const simpleDataReducer = (state: any, action: any) => {
   if (action.type === 'read') {
     return action.response;
@@ -25,5 +27,17 @@ export const listDataReducer = (state: any, action: any) => {
     return { ...state, data: newData };
   } else {
     return simpleDataReducer(state, action);
+  }
+};
+
+export const getQueryData = <T = any>(
+  query: Record<string, any>,
+  field: string = '*',
+  defaultValue: T = '' as T,
+): T | Record<string, any> => {
+  if (field === '*') {
+    return query;
+  } else {
+    return query[field] !== undefined ? query[field] : defaultValue;
   }
 };

@@ -61,7 +61,7 @@ const Controller = () => {
     validateFn: useLocalValidation,
     data: {
       email: user.data.email,
-      role: user.data.role,
+      assignedroles: user.data.assignedroles,
       defaultroleid: user.data.defaultroleid,
       id: mode === "update" ? Number(id) : undefined,
     },

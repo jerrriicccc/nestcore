@@ -19,13 +19,13 @@ export function TitleProvider({ children }: { children: ReactNode }) {
 
   const setTitle = (newSection: string, newMode?: string) => {
     setSection(newSection);
-    const fullTitle = newMode ? `PAWS & PALS | ${newSection} | ${capitalizeWords(newMode)}` : `PAWS & PALS | ${newSection}`;
+    const fullTitle = newMode ? `NEST CORE | ${newSection} | ${capitalizeWords(newMode)}` : `NEST CORE | ${newSection}`;
     document.title = fullTitle;
   };
 
   const updateTitleFromPath = () => {
     if (explicitTitle) {
-      document.title = `PAWS & PALS | ${explicitTitle}`;
+      document.title = `NEST CORE | ${explicitTitle}`;
       return;
     }
 

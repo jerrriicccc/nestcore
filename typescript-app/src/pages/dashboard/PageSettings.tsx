@@ -4,13 +4,13 @@ export const modelConfig = { read: "/index" };
 
 export const listTable = {
   columns: [
-    { label: "APN Number", id: "apnnumber" },
-    { label: "Pet Name", id: "petName" },
-    { label: "Appointment Date", id: "appointmentdate" },
-    { label: "Time", id: "timeName" },
-    { label: "Service Type", id: "servicetype" },
-    { label: "Status", id: "status" },
-    { id: "id", hidden: true },
+    // { label: "APN Number", id: "apnnumber" },
+    // { label: "Pet Name", id: "petName" },
+    // { label: "Appointment Date", id: "appointmentdate" },
+    // { label: "Time", id: "timeName" },
+    // { label: "Service Type", id: "servicetype" },
+    // { label: "Status", id: "status" },
+    // { id: "id", hidden: true },
   ],
   buttons: [
     {

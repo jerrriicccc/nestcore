@@ -1,18 +1,32 @@
-import { useCallback } from "react";
+import { RBAC_TREE } from "./constants";
 
-const TOKEN_KEY = "auth_token";
-const TOKEN_EXPIRY_KEY = "auth_token_expiry";
+const TOKEN_KEY = "token";
+const RBAC_PREFIX = "RBAC-";
+
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (typeof payload.exp !== "number") {
+      console.error("Token payload does not contain a valid 'exp' claim.", payload);
+      return true;
+    }
+    const expirationTime = payload.exp * 1000; // exp is in seconds, convert to milliseconds
+    return Date.now() >= expirationTime;
+  } catch (error) {
+    console.error("Error decoding token or checking expiry:", error);
+    return true; // Assume expired if decoding fails
+  }
+};
 
 export const getToken = (): string | null => {
   const token = sessionStorage.getItem(TOKEN_KEY);
-  const expiry = sessionStorage.getItem(TOKEN_EXPIRY_KEY);
 
-  if (!token || !expiry) {
+  if (!token) {
     return null;
   }
 
-  // Check if token has expired
-  if (Date.now() > parseInt(expiry)) {
+  // Check if token has expired by decoding the JWT
+  if (isTokenExpired(token)) {
     clearToken();
     return null;
   }
@@ -20,21 +34,54 @@ export const getToken = (): string | null => {
   return token;
 };
 
-export const setToken = (token: string, expiresIn: string = "24h"): void => {
-  // Calculate expiry time
-  const expiryTime = Date.now() + 24 * 60 * 60 * 1000; // 24 hours default
-
+export const setToken = (token: string, rbacTokens?: { [key: string]: string }, expiresIn: string = "24h"): void => {
+  // Store only the token - expiry will be checked from the JWT itself
   sessionStorage.setItem(TOKEN_KEY, token);
-  sessionStorage.setItem(TOKEN_EXPIRY_KEY, expiryTime.toString());
+
+  // Store RBAC tokens for each module
+  if (rbacTokens) {
+    Object.entries(rbacTokens).forEach(([module, rbacToken]) => {
+      sessionStorage.setItem(`${RBAC_PREFIX}${module}`, rbacToken);
+    });
+  } else {
+    // Fallback to storing the main token for each module (legacy behavior)
+    Object.values(RBAC_TREE).forEach((key) => {
+      sessionStorage.setItem(`${RBAC_PREFIX}${key}`, token);
+    });
+  }
 };
 
 export const clearToken = (): void => {
   sessionStorage.clear();
 };
 
+export const getRBACToken = (module: string): string | null => {
+  const token = sessionStorage.getItem(`${RBAC_PREFIX}${module}`);
+  return token;
+};
+
 export const isAuthenticated = (): boolean => {
   const token = getToken();
   return !!token;
+};
+
+export const getUserFromToken = (): any | null => {
+  const token = getToken();
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return {
+      id: payload.id || payload.sub,
+      email: payload.email,
+      defaultroleid: payload.defaultroleid,
+    };
+  } catch (error) {
+    console.error("Error decoding user data from token:", error);
+    return null;
+  }
 };
 
 // Auto-clear tokens when tab/window is closed

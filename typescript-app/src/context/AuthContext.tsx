@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { getToken, clearToken, isAuthenticated } from "../lib/token-service";
+import { getToken, clearToken, getUserFromToken } from "../lib/token-service";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -56,17 +56,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const token = getToken();
-      const userDataString = sessionStorage.getItem("user");
 
       if (token && !isTokenExpired(token)) {
         setIsAuthenticated(true);
-        try {
-          setUser(userDataString ? JSON.parse(userDataString) : null);
-        } catch (e) {
-          console.error("Error parsing user data from sessionStorage:", e);
-          setUser(null);
-          sessionStorage.removeItem("user");
-        }
+        // Get user data from token
+        const userData = getUserFromToken();
+        setUser(userData);
       } else {
         setIsAuthenticated(false);
         setUser(null);

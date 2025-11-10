@@ -19,6 +19,16 @@ export default new DataSource({
   migrations: [
     isCompiled ? 'dist/migrations/*{.js,.ts}' : 'src/migrations/*{.js,.ts}',
   ],
-  synchronize: false,
-  logging: false,
+  // Respect environment flags so behavior can be toggled via .env
+  synchronize: (process.env.DB_SYNC || 'false').toLowerCase() === 'true',
+  logging: (process.env.DB_LOGGING || 'false').toLowerCase() === 'true',
 });
+
+// Log resolved DB connection info (excluding password) to help debug connectivity issues
+const resolvedHost = process.env.DB_HOST || 'localhost';
+const resolvedPort = process.env.DB_PORT || '3306';
+const resolvedUser = process.env.DB_USERNAME || 'root';
+const resolvedDatabase = process.env.DB_DATABASE || 'nestjsds';
+console.info(
+  `[TypeORM] DB host=${resolvedHost} port=${resolvedPort} user=${resolvedUser} database=${resolvedDatabase} synchronize=${process.env.DB_SYNC || 'false'} logging=${process.env.DB_LOGGING || 'false'}`,
+);

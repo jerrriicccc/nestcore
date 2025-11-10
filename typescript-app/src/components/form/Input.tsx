@@ -29,7 +29,7 @@ interface BaseInputProps {
 export const TextInput: React.FC<BaseInputProps> = ({ name, label, data, onChange, placeholder = " ", readOnly = false, error, className }) => (
   <Form.Group className="mb-3">
     <FloatingLabel label={label}>
-      <Form.Control type="text" name={name} value={data} onChange={onChange} readOnly={readOnly} placeholder={placeholder} isInvalid={!!error} className={className} />
+      <Form.Control type="text" name={name} value={data ?? ""} onChange={onChange} readOnly={readOnly} placeholder={placeholder} isInvalid={!!error} className={className} />
       {error && <Form.Control.Feedback type="invalid">{error}</Form.Control.Feedback>}
     </FloatingLabel>
   </Form.Group>

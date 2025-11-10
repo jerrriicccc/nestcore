@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 export interface UserData {
   id?: number;
   email: string;
-  role: string[];
+  assignedroles: string[];
   defaultroleid: any;
 }
 
@@ -24,7 +24,7 @@ interface UserFormProps {
   };
 }
 
-const UserForm = ({ data = { email: "", role: [], defaultroleid: "" }, onChange, onSubmit, selectOptions }: UserFormProps) => {
+const UserForm = ({ data = { email: "", assignedroles: [], defaultroleid: "" }, onChange, onSubmit, selectOptions }: UserFormProps) => {
   const { mode } = useParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +44,7 @@ const UserForm = ({ data = { email: "", role: [], defaultroleid: "" }, onChange,
             <TextInput name="email" label="Email" data={data.email || ""} onChange={onChange} />
           </Col>
           <Col md={4}>
-            <MultiSelectInput name="role" label="Role" data={data} onChange={(e: InputType) => onChange(e)} selectProps={{ isMulti: true, placeholder: "" }} options={selectOptions?.roles} />
+            <MultiSelectInput name="assignedroles" label="Role" data={data} onChange={(e: InputType) => onChange(e)} selectProps={{ isMulti: true, placeholder: "" }} options={selectOptions?.roles} />
           </Col>
           <Col md={4}>
             <SelectInput name="defaultroleid" label="Default Role" data={data.defaultroleid} onChange={handleChange} options={selectOptions?.roles} />

@@ -58,7 +58,7 @@ export default function NotFound() {
             // mb: 1,
           }}
         >
-          PAWS & PALS
+          NEST CORE
         </Typography>
 
         <Typography
