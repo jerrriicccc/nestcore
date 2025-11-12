@@ -12,7 +12,7 @@ import * as argon2 from 'argon2';
 import transformer from '../../../component/Transformer';
 
 @Entity('users')
-export class User {
+export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

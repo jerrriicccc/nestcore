@@ -13,7 +13,7 @@ import {
   DeepPartial,
 } from 'typeorm';
 import { Customer } from './entity/customers.entity';
-import { UserStatus } from '../userstatuses/entity/userstatuses.entity';
+import { UserStatusEntity } from '../userstatuses/entity/userstatuses.entity';
 import { paginate } from 'nestjs-typeorm-paginate';
 import { RoleAccessDetailEntity } from 'src/pages/roleaccessdetails/entity/roleaccessdetail.entity';
 
@@ -26,8 +26,8 @@ export class CustomersService {
     private readonly dataSource: DataSource,
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
-    @InjectRepository(UserStatus)
-    private readonly userStatusRepository: Repository<UserStatus>,
+    @InjectRepository(UserStatusEntity)
+    private readonly userStatusRepository: Repository<UserStatusEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -127,7 +127,7 @@ export class CustomersService {
   }
 
   private async getStatName(statusid: number): Promise<string> {
-    const repo = this.getRepository(UserStatus);
+    const repo = this.getRepository(UserStatusEntity);
     const status = await repo.findOne({ where: { id: statusid } as any });
     return status?.status || 'Unknown';
   }
@@ -156,7 +156,7 @@ export class CustomersService {
     };
   }
 
-  async findPaginated(
+  async getMainIndexTable(
     entity: EntityTarget<Customer>,
     page = 1,
     searchCond = '',
@@ -186,7 +186,7 @@ export class CustomersService {
         meta: this.paginationMeta(result.meta),
       };
     } catch (error) {
-      console.error('Error in findPaginated:', error);
+      console.error('Error in getMainIndexTable:', error);
       throw new InternalServerErrorException('Failed to fetch paginated data');
     }
   }

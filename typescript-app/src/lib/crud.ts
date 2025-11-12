@@ -29,6 +29,8 @@ export function getDefaultHeaders(requestOptions: RequestOptions = {}) {
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn("No token found in sessionStorage. User may need to log in again.");
   }
 
   if (contentType === "form-data") {
@@ -39,19 +41,38 @@ export function getDefaultHeaders(requestOptions: RequestOptions = {}) {
 }
 
 function getRBACModuleFromTree(endPoint: string) {
-  return endPoint in RBAC_TREE ? RBAC_TREE[endPoint] : endPoint;
+  // If endpoint is a key in RBAC_TREE, return the mapped value
+  if (endPoint in RBAC_TREE) {
+    return RBAC_TREE[endPoint];
+  }
+  // Otherwise, return the endpoint as-is (for direct module names)
+  return endPoint;
 }
 
 export function getRBACHeader(header: Headers, path: string) {
-  const pathSegments = path.split("/");
+  const pathSegments = path.split("/").filter((segment) => segment.length > 0);
 
-  const module = pathSegments.length > 1 ? getRBACModuleFromTree(pathSegments[1]) : "";
+  // Extract module from path (first segment after leading slash)
+  // e.g., "/appointments/newcard" -> "appointments"
+  const moduleName = pathSegments.length > 0 ? pathSegments[0] : "";
+
+  if (!moduleName) {
+    console.warn(`Could not extract module name from path: ${path}`);
+    return header;
+  }
+
+  // Get the RBAC module name (may be mapped via RBAC_TREE)
+  const module = getRBACModuleFromTree(moduleName);
 
   // Get the RBAC token for the specific module
   const rbacToken = getRBACToken(module);
 
   if (!rbacToken) {
-    console.warn(`No RBAC token found for module: ${module}`);
+    console.warn(`No RBAC token found for module: ${module} (extracted from path: ${path})`);
+    console.warn(
+      `Available sessionStorage keys:`,
+      Object.keys(sessionStorage).filter((k) => k.startsWith("RBAC-"))
+    );
     return header;
   }
 
@@ -94,7 +115,27 @@ async function sendHttpRequest(endPoint: string, method: string, headers: any, b
   const json = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(json.message || "API Error");
+    // Log detailed error information for debugging
+    const headerObj: Record<string, string> = {};
+    if (headers instanceof Headers) {
+      headers.forEach((value, key) => {
+        // Mask sensitive headers in logs
+        if (key.toLowerCase() === "authorization") {
+          headerObj[key] = value.substring(0, 20) + "...";
+        } else {
+          headerObj[key] = value;
+        }
+      });
+    } else {
+      Object.assign(headerObj, headers);
+    }
+
+    // Create error with more details
+    const error = new Error(json.message || json.error || "API Error");
+    (error as any).status = response.status;
+    (error as any).code = json.code;
+    (error as any).data = json;
+    throw error;
   }
 
   return json;
@@ -134,19 +175,22 @@ export async function readData(endPoint: string, requestOptions: RequestOptions 
 }
 
 export async function createData(endPoint: string, requestOptions: RequestOptions = {}) {
-  const headers = getDefaultHeaders(requestOptions);
+  let headers = new Headers(getDefaultHeaders(requestOptions));
+  headers = getRBACHeader(headers, endPoint);
   const body = getRequestBody(requestOptions, requestOptions.requestData);
   return await sendHttpRequest(endPoint, "POST", headers, body);
 }
 
 export async function updateData(endPoint: string, requestOptions: RequestOptions = {}) {
-  const headers = getDefaultHeaders(requestOptions);
+  let headers = new Headers(getDefaultHeaders(requestOptions));
+  headers = getRBACHeader(headers, endPoint);
   const body = getRequestBody(requestOptions, requestOptions.requestData);
   return await sendHttpRequest(endPoint, "PUT", headers, body);
 }
 
 export async function deleteData(endPoint: string, requestOptions: RequestOptions = {}) {
-  const headers = getDefaultHeaders(requestOptions);
+  let headers = new Headers(getDefaultHeaders(requestOptions));
+  headers = getRBACHeader(headers, endPoint);
   const body = getRequestBody(requestOptions, requestOptions.requestData);
   return await sendHttpRequest(endPoint, "DELETE", headers, body);
 }

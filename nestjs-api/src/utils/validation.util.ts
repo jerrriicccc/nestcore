@@ -89,3 +89,10 @@ export function IsOptionalNumber() {
 export function IsOptionalInteger() {
   return applyDecorators(IsInt(), IsOptional());
 }
+
+/**
+ * String field - optional
+ */
+export function IsOptionalString() {
+  return applyDecorators(IsString(), IsOptional());
+}

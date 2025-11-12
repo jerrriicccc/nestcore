@@ -4,10 +4,10 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '../users/entity/user.entity';
+import { UserEntity } from '../users/entity/user.entity';
 import { CreateDto } from '../users/dto/user.dto';
 import { randomUUID } from 'crypto';
 import { MailService } from '../mail/mail.service';
@@ -23,15 +23,17 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async findUserByEmail(email: string) {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async registerOAuthUser(payload: any): Promise<User> {
+  async registerOAuthUser(payload: any): Promise<UserEntity> {
     if (Array.isArray(payload)) {
       throw new BadRequestException(
         'registerOAuthUser does not accept an array payload',
@@ -48,7 +50,6 @@ export class AuthService {
       verificationtoken: null,
       failedloginattempts: 0,
       defaultroleid: payload.defaultroleid || 2,
-      // Add any provider-specific fields
       ...payload,
     });
     const saved = await this.userRepository.save(user);
@@ -67,7 +68,7 @@ export class AuthService {
   async findOrCreateUserByGithub(
     githubProfile: any,
     githubEmail: string,
-  ): Promise<User> {
+  ): Promise<UserEntity> {
     // First, try to find the user by their GitHub ID
     let user = await this.userRepository.findOne({
       where: { githubId: githubProfile.id.toString() },
@@ -158,77 +159,6 @@ export class AuthService {
     };
   }
 
-  // async login(email: string, password: string) {
-  //   try {
-  //     if (!email || !password) {
-  //       throw new BadRequestException('Email and password are required');
-  //     }
-
-  //     const user = await this.userRepository.findOne({
-  //       where: { email },
-  //       select: {
-  //         id: true,
-  //         email: true,
-  //         password: true,
-  //         defaultroleid: true,
-  //         assignedroles: true,
-  //       },
-  //     });
-
-  //     if (!user) {
-  //       throw new UnauthorizedException(
-  //         "Couldn't find your account. Please sign up.",
-  //       );
-  //     }
-  //     if (user.statusid === 3) {
-  //       throw new UnauthorizedException(
-  //         'Account is locked. Please contact support.',
-  //       );
-  //     }
-  //     if (user.statusid === 1) {
-  //       throw new UnauthorizedException(
-  //         'Please verify your email before logging in.',
-  //       );
-  //     }
-
-  //     // Validate password
-  //     const isPasswordValid = await argon2.verify(user.password, password);
-
-  //     if (!isPasswordValid) {
-  //       await this.userRepository.increment(
-  //         { id: user.id },
-  //         'failedloginattempts',
-  //         1,
-  //       );
-
-  //       const updatedUser = await this.userRepository.findOne({
-  //         where: { id: user.id },
-  //         select: ['failedloginattempts', 'statusid'],
-  //       });
-
-  //       if (!updatedUser) {
-  //         throw new UnauthorizedException('User not found');
-  //       }
-
-  //       if (updatedUser.failedloginattempts >= 5) {
-  //         await this.userRepository.update(user.id, { statusid: 3 }); // Lock account
-  //         throw new UnauthorizedException(
-  //           'Too many failed attempts. Account has been locked.',
-  //         );
-  //       }
-
-  //       throw new UnauthorizedException('Invalid Credentials');
-  //     }
-
-  //     await this.userRepository.update(user.id, { failedloginattempts: 0 });
-
-  //     return user;
-  //   } catch (error) {
-  //     console.error('Login error:', error);
-  //     throw error;
-  //   }
-  // }
-
   async login(email: string, password: string) {
     if (!email || !password) {
       throw new BadRequestException('Email and password are required');
@@ -285,7 +215,7 @@ export class AuthService {
     return this.generateLoginResponse(user);
   }
 
-  private async handleFailedLogin(user: User) {
+  private async handleFailedLogin(user: UserEntity) {
     await this.userRepository.increment(
       { id: user.id },
       'failedloginattempts',
@@ -305,7 +235,159 @@ export class AuthService {
     }
   }
 
-  async generateLoginResponse(user: User) {
+  /**
+   * Map module name from lowercase plural (appointments) to database format (Appointment)
+   * This maps the module name used in the code to the accesskey format in the database
+   * Database uses singular capitalized form: appointments -> Appointment, customers -> Customer
+   */
+  private mapModuleNameToAccessKey(moduleName: string): string {
+    // Remove trailing 's' if plural, then capitalize first letter
+    // appointments -> appointment -> Appointment
+    // customers -> customer -> Customer
+    const singular = moduleName.endsWith('s')
+      ? moduleName.slice(0, -1)
+      : moduleName;
+    return singular.charAt(0).toUpperCase() + singular.slice(1);
+  }
+
+  /**
+   * Get user's role permissions from database for a specific module
+   * @param roleId - User's role ID
+   * @param moduleName - Module name (e.g., 'appointments', 'customers')
+   * @returns Array of access permissions (e.g., ['Read', 'Create'])
+   */
+  private async getUserRolePermissions(
+    roleId: number,
+    moduleName: string,
+  ): Promise<string[]> {
+    try {
+      // Map module name to database accesskey format
+      const accessKey = this.mapModuleNameToAccessKey(moduleName);
+
+      // Query rolelines table for the user's role and module
+      const query = `
+        SELECT rl.accessvalue 
+        FROM rolelines rl 
+        WHERE rl.roleid = ? 
+        AND rl.accesskey = ?
+      `;
+
+      console.log(
+        `Getting permissions for roleId: ${roleId}, module: ${moduleName}, accessKey: ${accessKey}`,
+      );
+
+      const result = await this.dataSource.query(query, [roleId, accessKey]);
+
+      if (result && result.length > 0 && result[0].accessvalue) {
+        // accessvalue is stored as JSON string, parse it
+        const accessValue =
+          typeof result[0].accessvalue === 'string'
+            ? JSON.parse(result[0].accessvalue)
+            : result[0].accessvalue;
+
+        console.log(
+          `Found permissions for role ${roleId} on module ${moduleName}:`,
+          accessValue,
+        );
+        return Array.isArray(accessValue) ? accessValue : [];
+      }
+
+      console.log(
+        `No permissions found for role ${roleId} on module ${moduleName} (accessKey: ${accessKey})`,
+      );
+      return [];
+    } catch (error) {
+      console.error('Error getting user role permissions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get permissions from multiple roles for a specific module
+   * Returns permissions from all assigned roles (without merging/removing duplicates)
+   * @param roleIds - Array of role IDs (from assignedroles)
+   * @param moduleName - Module name (e.g., 'appointments', 'customers')
+   * @returns Array of access permissions from all roles
+   */
+  private async getUserPermissionsFromMultipleRoles(
+    roleIds: (string | number)[],
+    moduleName: string,
+  ): Promise<string[]> {
+    try {
+      if (!roleIds || roleIds.length === 0) {
+        console.log(`No roles provided for module ${moduleName}`);
+        return [];
+      }
+
+      // Map module name to database accesskey format
+      const accessKey = this.mapModuleNameToAccessKey(moduleName);
+
+      // Convert role IDs to numbers and filter out invalid ones
+      const validRoleIds = roleIds
+        .map((id) => {
+          const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+          return isNaN(numId) ? null : numId;
+        })
+        .filter((id): id is number => id !== null);
+
+      if (validRoleIds.length === 0) {
+        console.log(`No valid role IDs provided for module ${moduleName}`);
+        return [];
+      }
+
+      // Query rolelines table for all roles and module
+      const query = `
+        SELECT rl.roleid, rl.accessvalue 
+        FROM rolelines rl 
+        WHERE rl.roleid IN (${validRoleIds.map(() => '?').join(',')})
+        AND rl.accesskey = ?
+      `;
+
+      console.log(
+        `Getting permissions for roles [${validRoleIds.join(', ')}], module: ${moduleName}, accessKey: ${accessKey}`,
+      );
+
+      const results = await this.dataSource.query(query, [
+        ...validRoleIds,
+        accessKey,
+      ]);
+
+      // Collect all permissions from all roles (keeping all permissions, including duplicates)
+      const allPermissions: string[] = [];
+      for (const result of results) {
+        if (result.accessvalue) {
+          // accessvalue is stored as JSON string, parse it
+          const accessValue =
+            typeof result.accessvalue === 'string'
+              ? JSON.parse(result.accessvalue)
+              : result.accessvalue;
+
+          if (Array.isArray(accessValue)) {
+            allPermissions.push(...accessValue);
+            console.log(
+              `Role ${result.roleid} permissions for ${moduleName}:`,
+              accessValue,
+            );
+          }
+        }
+      }
+
+      console.log(
+        `All permissions for roles [${validRoleIds.join(', ')}] on module ${moduleName}:`,
+        allPermissions,
+      );
+
+      return allPermissions;
+    } catch (error) {
+      console.error(
+        'Error getting user permissions from multiple roles:',
+        error,
+      );
+      return [];
+    }
+  }
+
+  async generateLoginResponse(user: UserEntity) {
     try {
       // Generate access token
       const accessToken = this.generateAccessToken(user);
@@ -314,12 +396,54 @@ export class AuthService {
       const rbacTokens: { [key: string]: string } = {};
       const modules = ['appointments', 'customers']; // Add more modules as needed
 
+      // Get assigned roles - ONLY use assignedroles, do NOT use defaultroleid
+      if (!user.assignedroles || user.assignedroles.length === 0) {
+        console.log(
+          `User ${user.id} has no assigned roles. Skipping RBAC token generation.`,
+        );
+        // Return response without RBAC tokens if no assigned roles
+        return {
+          status: 'success',
+          data: {
+            access_token: accessToken,
+            rbac_tokens: {},
+            user: {
+              id: user.id,
+              email: user.email,
+              defaultroleid: user.defaultroleid,
+              assignedroles: user.assignedroles,
+            },
+          },
+        };
+      }
+
+      const assignedRoles = user.assignedroles;
+
+      console.log(
+        `Generating RBAC tokens for user ${user.id} with assigned roles:`,
+        assignedRoles,
+      );
+
       for (const module of modules) {
-        // Create access data for the module
+        // Get permissions from database for this module and all assigned roles
+        const permissions = await this.getUserPermissionsFromMultipleRoles(
+          assignedRoles,
+          module,
+        );
+
+        // If no permissions found, skip this module (user has no access)
+        if (permissions.length === 0) {
+          console.log(
+            `Skipping module ${module} - no permissions found for roles [${assignedRoles.join(', ')}]`,
+          );
+          continue;
+        }
+
+        // Create access data for the module with actual database permissions
         const accessData = {
           module: module,
-          access: ['Read', 'Create', 'Update', 'Delete'], // Default permissions
-          role: user.defaultroleid || 2,
+          access: permissions, // Use permissions from database (collected from all assigned roles)
+          role: assignedRoles, // Store all assigned roles
           userId: user.id,
           email: user.email,
         };
@@ -357,12 +481,13 @@ export class AuthService {
     }
   }
 
-  private generateAccessToken(user: User): string {
+  private generateAccessToken(user: UserEntity): string {
     const payload = {
       sub: user.id,
       id: user.id, // Add explicit id field for RBAC validation
       email: user.email,
       defaultroleid: user.defaultroleid,
+      assignedroles: user.assignedroles || [], // Include assigned roles in token
       iat: Math.floor(Date.now() / 1000),
     };
 
@@ -383,7 +508,10 @@ export class AuthService {
     });
   }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<UserEntity | null> {
     const user = await this.userRepository.findOne({
       where: { email },
       select: {
@@ -419,7 +547,7 @@ export class AuthService {
     return user?.email ?? null;
   }
 
-  async findExistingUserByEmail(email: string): Promise<User | null> {
+  async findExistingUserByEmail(email: string): Promise<UserEntity | null> {
     try {
       const user = await this.userRepository.findOne({
         where: { email },
@@ -487,7 +615,7 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  async findAndActivateUserByEmail(email: string): Promise<User | null> {
+  async findAndActivateUserByEmail(email: string): Promise<UserEntity | null> {
     const user = await this.userRepository.findOne({
       where: { email: email },
     });

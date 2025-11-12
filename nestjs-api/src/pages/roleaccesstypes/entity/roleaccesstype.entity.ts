@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { RoleAccessDetailEntity } from '../../roleaccessdetails/entity/roleaccessdetail.entity';
 
 @Entity('roleaccesstypes')
-export class RoleAccessType {
+export class RoleAccessTypeEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

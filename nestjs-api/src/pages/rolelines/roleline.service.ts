@@ -14,7 +14,7 @@ import {
   FindOptionsWhere,
   In,
 } from 'typeorm';
-import { RoleLine } from './entity/roleline.entity';
+import { RoleLineEntity } from './entity/roleline.entity';
 import { paginate } from 'nestjs-typeorm-paginate';
 import { SearchCondDto } from './dto/search-cond.dto';
 import { RoleAccessDetailEntity } from 'src/pages/roleaccessdetails/entity/roleaccessdetail.entity';
@@ -26,8 +26,8 @@ export class RoleLinesService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(RoleLine)
-    private readonly roleLineRepository: Repository<RoleLine>,
+    @InjectRepository(RoleLineEntity)
+    private readonly roleLineRepository: Repository<RoleLineEntity>,
     @InjectRepository(RoleAccessDetailEntity)
     private readonly roleAccessDetailRepository: Repository<RoleAccessDetailEntity>,
   ) {}

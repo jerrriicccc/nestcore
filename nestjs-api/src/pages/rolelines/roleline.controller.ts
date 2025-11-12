@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { RoleLinesService } from './roleline.service';
 import { CreateDto, UpdateDto } from './dto/roleline.dto';
-import { RoleLine } from './entity/roleline.entity';
+import { RoleLineEntity } from './entity/roleline.entity';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { SearchCondDto } from './dto/search-cond.dto';
@@ -53,19 +53,22 @@ export class RoleLinesController {
     parsed = JSON.parse(searchcond);
     const dto = plainToInstance(SearchCondDto, parsed);
 
-    const data = await this.roleLinesService.findAll(RoleLine, dto);
+    const data = await this.roleLinesService.findAll(RoleLineEntity, dto);
     return { data };
   }
 
   @Get('getcard')
   async findOne(@Query('id', ParseIntPipe) id: number) {
-    const result = await this.roleLinesService.findOne(RoleLine, id);
+    const result = await this.roleLinesService.findOne(RoleLineEntity, id);
     return { data: result };
   }
 
   @Post('newcard')
   async create(@Body() createDto: CreateDto) {
-    const result = await this.roleLinesService.create(RoleLine, createDto);
+    const result = await this.roleLinesService.create(
+      RoleLineEntity,
+      createDto,
+    );
     return { data: result };
   }
 
@@ -75,7 +78,7 @@ export class RoleLinesController {
       throw new BadRequestException('ID is required for updating');
     }
     const result = await this.roleLinesService.update(
-      RoleLine,
+      RoleLineEntity,
       updateDto.id,
       updateDto,
     );
@@ -84,6 +87,6 @@ export class RoleLinesController {
 
   @Delete('deletecard')
   async delete(@Body('id', ParseIntPipe) id: number) {
-    return this.roleLinesService.delete(RoleLine, id);
+    return this.roleLinesService.delete(RoleLineEntity, id);
   }
 }

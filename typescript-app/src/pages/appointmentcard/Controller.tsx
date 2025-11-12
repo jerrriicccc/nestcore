@@ -4,7 +4,7 @@ import SubHeader from "../../components/layout/SubHeader";
 import AppointmentForm from "./AppointmentForm";
 import { defaultState, navButtons, modelConfig, path, useLocalValidation, optionState, optionEndPoints } from "./PageSettings";
 import useModel, { useSelectOption } from "../../lib/use-model";
-import { cardDataReducer, simpleDataReducer } from "../../lib/functions";
+import { cardDataReducer } from "../../lib/functions";
 import { useInitializeData, useDataById, useCardFormSubmitHandler } from "../../lib/use-datatool";
 import AuthorizationAlert from "../authorization/AuthorizationAlert";
 

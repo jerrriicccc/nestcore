@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 @Entity('roleaccessoptions')
-export class RoleAccessOption {
+export class RoleAccessOptionEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

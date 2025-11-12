@@ -19,7 +19,7 @@ export const bookingMenuItems: SidebarItem[] = [
   { link: "/appointmentlist", caption: "List", icon: <FormatListBulletedIcon /> },
   { link: "/appointmentsettings/create", caption: "Settings", icon: <FormatListBulletedIcon /> },
 ];
-export const servicesMenuItems: SidebarItem[] = [{ link: "/servicesettinghome", caption: "Settings", icon: <FormatListBulletedIcon /> }];
+export const servicesMenuItems: SidebarItem[] = [{ link: "/servicesettinghome", caption: "Home", icon: <FormatListBulletedIcon /> }];
 export const workflowMenuItems: SidebarItem[] = [
   { link: "/workflowsettings/create", caption: "List", icon: <FormatListBulletedIcon /> },
   { link: "/statuses/create", caption: "Status", icon: <FormatListBulletedIcon /> },

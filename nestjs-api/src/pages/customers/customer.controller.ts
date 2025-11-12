@@ -48,7 +48,7 @@ export class CustomersController {
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 
-    return await this.customersService.findPaginated(
+    return await this.customersService.getMainIndexTable(
       Customer,
       page,
       searchCond,

@@ -1,53 +1,36 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getToken, getUserFromToken } from "../../lib/token-service";
+import { Fragment, useEffect, useState } from "react";
+import DenyRoleBasedAccess from "./DenyRoleBasedAccess";
 
-const AuthorizationAlert = () => {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+interface AuthorizationAlertProps {
+  status?: any;
+  // If empty or not provided, treat as "all actions"
+  dependsOn?: string[];
+}
+
+const AuthorizationAlert = (props: AuthorizationAlertProps) => {
+  const { status = {}, dependsOn = [] } = props;
+  const [alert, setAlert] = useState<{ code: number; message: string } | null>(null);
 
   useEffect(() => {
-    const checkAuthorization = () => {
-      const token = getToken();
+    // Normalize response body and extract status/code/message in common shapes
+    const resp = status?.body?.response || status?.body || {};
+    const code = resp?.status || resp?.code || null;
+    const message = resp?.message || resp?.data || "You have no access to this resource.";
 
-      if (!token) {
-        setIsAuthorized(false);
-        setIsLoading(false);
-        // navigate("/login");
-        return;
-      }
+    // If dependsOn is empty, treat it as all actions allowed
+    const actionAllowed = dependsOn.length === 0 || (status?.action && dependsOn.includes(status.action));
 
-      // Get user data from token
-      const userData = getUserFromToken();
+    // Consider both 401 and 403 as access-denied indicators. Also allow message-based detection.
+    const isAccessDenied = code === 401 || (typeof message === "string" && message.toLowerCase().includes("no access"));
 
-      if (userData) {
-        // Check if user has defaultroleid 1 (admin) - allow access to all routes
-        if (userData.defaultroleid === 1) {
-          setIsAuthorized(true);
-          setIsLoading(false);
-          return;
-        }
-      }
+    if (status?.status === "error" && status?.action !== "validation" && isAccessDenied && actionAllowed) {
+      setAlert({ code: code || 401, message: typeof message === "string" ? message : "Access denied" });
+    } else {
+      setAlert(null);
+    }
+  }, [status, dependsOn]);
 
-      // For non-admin users, you can add additional role-based checks here
-      // For now, we'll allow access to all authenticated users
-      setIsAuthorized(true);
-      setIsLoading(false);
-    };
-
-    checkAuthorization();
-  }, [navigate]);
-
-  if (isLoading) {
-    return null; // Don't show anything while checking authorization
-  }
-
-  if (!isAuthorized) {
-    return <p>You are not authorized to view this page.</p>;
-  }
-
-  return null; // User is authorized, don't show any message
+  return <Fragment>{alert ? <DenyRoleBasedAccess authorization={alert} /> : null}</Fragment>;
 };
 
 export default AuthorizationAlert;

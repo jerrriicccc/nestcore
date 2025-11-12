@@ -34,7 +34,7 @@ export class AppointmentNumberController {
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 
-    return await this.appointmentNumberService.findPaginated(
+    return await this.appointmentNumberService.getMainIndexTable(
       AppointmentNumberEntity,
       page,
       searchCond,

@@ -12,10 +12,10 @@ import {
   EntityTarget,
   DeepPartial,
 } from 'typeorm';
-import { Role } from './entity/role.entity';
+import { RoleEntity } from './entity/role.entity';
 import { paginate, IPaginationOptions } from 'nestjs-typeorm-paginate';
 import { RoleAccessDetailEntity } from '../roleaccessdetails/entity/roleaccessdetail.entity';
-import { RoleLine } from '../rolelines/entity/roleline.entity';
+import { RoleLineEntity } from '../rolelines/entity/roleline.entity';
 import { Customer } from '../customers/entity/customers.entity';
 
 @Injectable()
@@ -25,12 +25,12 @@ export class RolesService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
+    @InjectRepository(RoleEntity)
+    private readonly roleRepository: Repository<RoleEntity>,
     @InjectRepository(RoleAccessDetailEntity)
     private readonly roleAccessDetailRepository: Repository<RoleAccessDetailEntity>,
-    @InjectRepository(RoleLine)
-    private readonly roleLineRepository: Repository<RoleLine>,
+    @InjectRepository(RoleLineEntity)
+    private readonly roleLineRepository: Repository<RoleLineEntity>,
 
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
@@ -156,8 +156,8 @@ export class RolesService {
     };
   }
 
-  async findPaginated(
-    entity: EntityTarget<Role>,
+  async getMainIndexTable(
+    entity: EntityTarget<RoleEntity>,
     page = 1,
     searchCond = '',
     limit = this.DEFAULT_PAGE_LIMIT,
@@ -176,7 +176,7 @@ export class RolesService {
 
       this.buildSearchQuery(queryBuilder, searchCond);
 
-      const result = await paginate<Role>(queryBuilder, {
+      const result = await paginate<RoleEntity>(queryBuilder, {
         page: Math.max(1, page),
         limit,
       });
@@ -186,7 +186,7 @@ export class RolesService {
         meta: this.paginationMeta(result.meta),
       };
     } catch (error) {
-      console.error('Error in findPaginated:', error);
+      console.error('Error in getMainIndexTable:', error);
       throw new InternalServerErrorException('Failed to fetch paginated data');
     }
   }

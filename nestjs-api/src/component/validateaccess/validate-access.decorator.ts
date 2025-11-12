@@ -4,6 +4,7 @@ import {
   Injectable,
   UseGuards,
   UnauthorizedException,
+  HttpException,
 } from '@nestjs/common';
 import {
   ValidateAccessService as ValidateAccessServiceClass,
@@ -153,11 +154,17 @@ export function ValidateAccessMethod(options: ValidateAccessOptions = {}) {
       const { validateToken, validateUserAccess } = require('./rbacToken');
 
       try {
-        // Validate Authorization token
-        const tokenResult = await validateToken(req);
-        if (!tokenResult.ok) {
-          // Throw proper NestJS exception with the specific error message
-          throw new UnauthorizedException(tokenResult.message);
+        // Check if token was already validated by AuthGuard
+        // If request.user exists, AuthGuard has already validated the token
+        const tokenAlreadyValidated = !!req['user'];
+
+        if (!tokenAlreadyValidated) {
+          // Validate Authorization token only if not already validated by AuthGuard
+          const tokenResult = await validateToken(req);
+          if (!tokenResult.ok) {
+            // Throw proper NestJS exception with the specific error message
+            throw new UnauthorizedException(tokenResult.message);
+          }
         }
 
         // If only token validation is needed, proceed
@@ -178,14 +185,28 @@ export function ValidateAccessMethod(options: ValidateAccessOptions = {}) {
         // Both validations passed, proceed with original method
         return await originalMethod.apply(this, args);
       } catch (error) {
-        // If it's already a NestJS exception, re-throw it
-        if (error instanceof UnauthorizedException) {
+        // If it's already a NestJS HttpException (UnauthorizedException, BadRequestException, etc.),
+        // re-throw it to preserve the original exception type and status code
+        if (error instanceof HttpException) {
           throw error;
         }
-        // For other errors, wrap them in UnauthorizedException
-        throw new UnauthorizedException(
-          error.message || 'Authentication failed',
-        );
+        // Only wrap authentication/authorization-related errors that aren't HttpExceptions
+        // Let other errors (like database errors) propagate as-is so they can be handled properly
+        const errorMessage = error?.message || String(error);
+        if (
+          errorMessage.toLowerCase().includes('token') ||
+          errorMessage.toLowerCase().includes('rbac') ||
+          errorMessage.toLowerCase().includes('access') ||
+          errorMessage.toLowerCase().includes('permission') ||
+          errorMessage.toLowerCase().includes('unauthorized') ||
+          errorMessage.toLowerCase().includes('authentication')
+        ) {
+          throw new UnauthorizedException(
+            errorMessage || 'Authentication failed',
+          );
+        }
+        // For all other errors (database, validation, etc.), re-throw as-is
+        throw error;
       }
     };
 

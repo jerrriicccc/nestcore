@@ -39,10 +39,7 @@ export function getTokenFromHeader(request: Request): string[] | null {
 
 export function getRBACTokenFromHeader(request: Request): string[] | null {
   // Handle case-insensitive header access
-  const rbacHeader =
-    (request.headers['x-rbac-token'] as string) ||
-    (request.headers['X-Rbac-Token'] as string) ||
-    (request.headers['X-RBAC-TOKEN'] as string);
+  const rbacHeader = request.headers['x-rbac-token'] as string;
 
   if (!rbacHeader) return null;
   const auth = rbacHeader.split(' ');
@@ -68,7 +65,7 @@ export function getRBACTokenFromHeader(request: Request): string[] | null {
 function signTokenBase64(
   header: string,
   payload: string,
-  secret: string = process.env.JWT_SECRET || 'your-secret-key',
+  secret: string = process.env.JWT_SECRET || 'defaultsecret',
 ): string {
   const data = `${header}.${payload}`;
   return crypto
@@ -106,7 +103,6 @@ export function generateRBACToken(
   const rbacPayload = {
     sub: user.id,
     email: user.email,
-    defaultroleid: user.defaultroleid,
     id: user.id, // This should match the access token header id
     exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24 hours
     iat: Math.floor(Date.now() / 1000),
@@ -144,11 +140,6 @@ function decodeBase64ToJSON(base64String: string): any {
  * @throws Error if all decryption methods fail
  */
 function decryptCipher8(encryptedData: string): string {
-  console.log(
-    'Attempting to decrypt data:',
-    encryptedData.substring(0, 50) + '...',
-  );
-
   // Method 1: Try AES-256-CBC with IV (most common)
   try {
     const algorithm = 'aes-256-cbc';
@@ -165,13 +156,10 @@ function decryptCipher8(encryptedData: string): string {
       const decipher = crypto.createDecipheriv(algorithm, key, iv);
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
-
-      console.log('Successfully decrypted with AES-256-CBC');
       return decrypted;
     }
   } catch (error) {
-    console.log('AES-256-CBC decryption failed:', error.message);
-    // Continue to next method
+    return error.message;
   }
 
   // Method 2: Try simple base64 decoding
@@ -255,9 +243,17 @@ async function getUserRolePermissions(
     const ds = dataSource || globalDataSource;
 
     if (!ds) {
-      console.log('No DataSource available, returning empty permissions');
+      // console.log('No DataSource available, returning empty permissions');
       return [];
     }
+
+    // Map module name to database accesskey format
+    // Database uses singular capitalized form: appointments -> Appointment,
+    // Remove trailing 's' if plural, then capitalize first letter
+    const singular = moduleName.endsWith('s')
+      ? moduleName.slice(0, -1)
+      : moduleName;
+    const accessKey = singular.charAt(0).toUpperCase() + singular.slice(1);
 
     // Query rolelines table for the user's role and module
     const query = `
@@ -267,11 +263,7 @@ async function getUserRolePermissions(
       AND rl.accesskey = ?
     `;
 
-    console.log(
-      `Getting permissions for roleId: ${roleId}, module: ${moduleName}`,
-    );
-
-    const result = await ds.query(query, [roleId, moduleName]);
+    const result = await ds.query(query, [roleId, accessKey]);
 
     if (result && result.length > 0 && result[0].accessvalue) {
       // accessvalue is stored as JSON string, parse it
@@ -280,19 +272,88 @@ async function getUserRolePermissions(
           ? JSON.parse(result[0].accessvalue)
           : result[0].accessvalue;
 
-      console.log(
-        `Found permissions for role ${roleId} on module ${moduleName}:`,
-        accessValue,
-      );
       return Array.isArray(accessValue) ? accessValue : [];
     }
 
-    console.log(
-      `No permissions found for role ${roleId} on module ${moduleName}`,
-    );
     return [];
   } catch (error) {
     console.error('Error getting user role permissions:', error);
+    return [];
+  }
+}
+
+/**
+ * Get permissions from multiple roles for a specific module
+ * @param roleIds - Array of role IDs (from assignedroles)
+ * @param moduleName - Module name
+ * @param dataSource - TypeORM DataSource for database access
+ * @returns Array of access permissions from all roles
+ */
+async function getUserPermissionsFromMultipleRoles(
+  roleIds: (string | number)[],
+  moduleName: string,
+  dataSource?: DataSource,
+): Promise<string[]> {
+  try {
+    if (!roleIds || roleIds.length === 0) {
+      return [];
+    }
+
+    // Use provided DataSource or global DataSource
+    const ds = dataSource || globalDataSource;
+
+    if (!ds) {
+      // console.log('No DataSource available, returning empty permissions');
+      return [];
+    }
+
+    // Map module name to database accesskey format
+    const singular = moduleName.endsWith('s')
+      ? moduleName.slice(0, -1)
+      : moduleName;
+    const accessKey = singular.charAt(0).toUpperCase() + singular.slice(1);
+
+    // Convert role IDs to numbers and filter out invalid ones
+    const validRoleIds = roleIds
+      .map((id) => {
+        const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+        return isNaN(numId) ? null : numId;
+      })
+      .filter((id): id is number => id !== null);
+
+    if (validRoleIds.length === 0) {
+      return [];
+    }
+
+    // Query rolelines table for all roles and module
+    const query = `
+      SELECT rl.roleid, rl.accessvalue 
+      FROM rolelines rl 
+      WHERE rl.roleid IN (${validRoleIds.map(() => '?').join(',')})
+      AND rl.accesskey = ?
+    `;
+
+    const results = await ds.query(query, [...validRoleIds, accessKey]);
+
+    // Collect all permissions from all roles (keeping all permissions, including duplicates)
+    const allPermissions: string[] = [];
+    for (const result of results) {
+      if (result.accessvalue) {
+        // accessvalue is stored as JSON string, parse it
+        const accessValue =
+          typeof result.accessvalue === 'string'
+            ? JSON.parse(result.accessvalue)
+            : result.accessvalue;
+
+        if (Array.isArray(accessValue)) {
+          allPermissions.push(...accessValue);
+        }
+      }
+    }
+
+    return allPermissions;
+  } catch (error) {
+    console.error('Error getting user permissions from multiple roles:', error);
     return [];
   }
 }
@@ -344,12 +405,6 @@ export async function validateUserAccess(
     // Validate if token ID from access token matches token ID in RBAC payload
     // Get the ID from the access token payload (not header)
     const accessTokenPayload = decodeBase64ToJSON(token[1]);
-    console.log('Access Token Payload:', accessTokenPayload);
-    console.log('ID Validation:', {
-      accessTokenId: accessTokenPayload.id,
-      rbacPayloadId: payload.id,
-      idsMatch: accessTokenPayload.id === payload.id,
-    });
 
     if (accessTokenPayload.id !== payload.id) {
       response.code = 4;
@@ -368,23 +423,31 @@ export async function validateUserAccess(
 
     // Check if auth field exists
     if (!payload.auth) {
-      // Get actual role permissions from database instead of hardcoded permissions
-      const actualPermissions = await getUserRolePermissions(
-        payload.defaultroleid || 1,
+      // Get assigned roles from access token payload
+      // ONLY use assignedroles, do NOT use defaultroleid
+      if (
+        !accessTokenPayload.assignedroles ||
+        !Array.isArray(accessTokenPayload.assignedroles) ||
+        accessTokenPayload.assignedroles.length === 0
+      ) {
+        response.code = 7;
+        response.message =
+          'No assigned roles found. User must have assigned roles to access resources.';
+        return response;
+      }
+
+      const assignedRoles = accessTokenPayload.assignedroles;
+      const actualPermissions = await getUserPermissionsFromMultipleRoles(
+        assignedRoles,
         RBACModule || '',
         options.dataSource,
       );
 
-      console.log(
-        `Retrieved permissions for role ${payload.defaultroleid}:`,
-        actualPermissions,
-      );
-
       // Create access object with actual database permissions
       access = {
-        module: RBACModule || 'appointments',
-        access: actualPermissions, // Use actual database permissions instead of hardcoded
-        role: payload.defaultroleid || 1,
+        module: RBACModule || '',
+        access: actualPermissions, // Use actual database permissions from all assigned roles
+        role: assignedRoles, // Store all assigned roles
         userId: payload.sub,
         email: payload.email,
       };
@@ -393,17 +456,17 @@ export async function validateUserAccess(
         // Try to parse as JSON first (in case it's already decrypted)
         try {
           access = JSON.parse(payload.auth);
-          console.log('Successfully parsed auth as JSON:', access);
+          // console.log('Successfully parsed auth as JSON:', access);
         } catch (jsonError) {
-          console.log('JSON parsing failed, attempting decryption...');
+          // console.log('JSON parsing failed, attempting decryption...');
           // If JSON parsing fails, try decryption
           const decryptedData = decryptCipher8(payload.auth);
-          console.log('Decrypted data:', decryptedData);
+          // console.log('Decrypted data:', decryptedData);
           access = JSON.parse(decryptedData);
-          console.log('Successfully parsed decrypted data:', access);
+          // console.log('Successfully parsed decrypted data:', access);
         }
       } catch (decryptError) {
-        console.log('Failed to decrypt access data:', decryptError.message);
+        // console.log('Failed to decrypt access data:', decryptError.message);
         response.code = 7;
         response.message = 'Failed to decrypt access data';
         return response;
@@ -417,40 +480,17 @@ export async function validateUserAccess(
       return response;
     }
 
-    const rbacHeader =
-      request.headers['x-rbac-token'] ||
-      request.headers['X-Rbac-Token'] ||
-      request.headers['X-RBAC-TOKEN'];
+    const rbacHeader = request.headers['x-rbac-token'];
     const headerParts =
       rbacHeader && typeof rbacHeader === 'string' ? rbacHeader.split(' ') : [];
     const headerModule = headerParts.length > 0 ? headerParts[0] : null;
 
-    console.log('Module validation details:', {
-      requestedModule: RBACModule,
-      accessModule: access.module,
-      headerModule: headerModule,
-      rbacHeader: rbacHeader,
-      headerParts: headerParts,
-    });
-
-    // Check module match - BOTH access object AND header prefix must match
-    // This prevents token substitution attacks where someone uses a different module's token
     const accessModuleMatch = access.module === RBACModule;
     const headerModuleMatch = headerModule === RBACModule;
 
-    // Both the decrypted access module and the header prefix must match the requested module
     const moduleMatches = accessModuleMatch && headerModuleMatch;
 
-    console.log('Module validation result:', {
-      accessModuleMatch: accessModuleMatch,
-      headerModuleMatch: headerModuleMatch,
-      overallMatch: moduleMatches,
-      strictValidation:
-        'Both header and access module must match requested module',
-    });
-
     if (!moduleMatches) {
-      // Provide specific error message based on what failed
       if (!accessModuleMatch && !headerModuleMatch) {
         response.code = 5;
         response.message = `Mismatched module in role-based token. Expected: ${RBACModule}, Got access module: ${access.module}, Header module: ${headerModule}`;
@@ -501,9 +541,8 @@ export async function validateToken(
     // Decode payload
     const payload = JSON.parse(Buffer.from(token[1], 'base64').toString());
 
-    // Check token expiration
     const now = new Date();
-    const exp = new Date(payload.exp * 1000); // Convert Unix timestamp to Date
+    const exp = new Date(payload.exp * 1000);
 
     if (now > exp) {
       response.code = 3;
@@ -569,7 +608,6 @@ export async function validateRESTToken(
 
 /**
  * Get access information from RBAC payload
- * Equivalent to PHP getAccessInfoFromRBACPayload()
  * @param request - Express request object
  * @returns Access array from RBAC token
  * @throws Error if RBAC token is invalid or missing
@@ -589,7 +627,6 @@ export function getAccessInfoFromRBACPayload(request: Request): string[] {
 
 /**
  * Check if user has specific access permission
- * Equivalent to PHP hasAccess($txtAccess)
  * @param request - Express request object
  * @param txtAccess - Access permission to check (e.g., "Create", "Read", "Update", "Delete")
  * @returns True if user has the specified access
@@ -597,7 +634,6 @@ export function getAccessInfoFromRBACPayload(request: Request): string[] {
 export function hasAccess(request: Request, txtAccess: string): boolean {
   try {
     const access = getAccessInfoFromRBACPayload(request);
-    console.log('access', access);
     return Array.isArray(access) && access.includes(txtAccess);
   } catch (error) {
     return false;
@@ -606,7 +642,6 @@ export function hasAccess(request: Request, txtAccess: string): boolean {
 
 /**
  * Check if user has Create access
- * Equivalent to PHP hasCreateAccess()
  * @param request - Express request object
  * @returns True if user has Create access
  */
@@ -628,7 +663,6 @@ export function hasDeleteAccess(request: Request): boolean {
 
 /**
  * Deny role-based access and throw UnauthorizedException
- * Equivalent to PHP denyRoleBasedAccess()
  * @throws UnauthorizedException with 403 status
  */
 export function denyRoleBasedAccess(): never {

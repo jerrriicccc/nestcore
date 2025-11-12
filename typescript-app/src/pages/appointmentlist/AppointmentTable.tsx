@@ -1,7 +1,7 @@
 import RegularTable from "../../components/table/RegularTable";
 import { listTable } from "./PageSettings";
 
-interface AppointmentTableProps {
+interface UserTableProps {
   data: any[];
   actions: {
     delete: (id: number) => void;
@@ -11,7 +11,7 @@ interface AppointmentTableProps {
   columnOrder: string[];
 }
 
-const AppointmentTable = ({ data, actions, visibleColumns, columnOrder }: AppointmentTableProps) => {
+const AppointmentTable = ({ data, actions, visibleColumns, columnOrder }: UserTableProps) => {
   const tableProps = { hover: "hover", size: "sm" };
 
   const recordActions = {

@@ -8,7 +8,7 @@ import {
 import { Observable } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../users/entity/user.entity';
+import { UserEntity } from '../users/entity/user.entity';
 import { ConfigService } from '@nestjs/config';
 
 interface RateLimitEntry {
@@ -23,8 +23,8 @@ export class RateLimitGuard implements CanActivate {
   private readonly windowMs: number;
 
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
     private readonly configService: ConfigService,
   ) {
     this.maxAttempts = this.configService.get<number>(

@@ -11,7 +11,7 @@ import {
   EntityTarget,
   DeepPartial,
 } from 'typeorm';
-import { UserStatus } from './entity/userstatuses.entity';
+import { UserStatusEntity } from './entity/userstatuses.entity';
 
 @Injectable()
 export class UserStatusesService {
@@ -20,8 +20,8 @@ export class UserStatusesService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(UserStatus)
-    private readonly userStatusRepository: Repository<UserStatus>,
+    @InjectRepository(UserStatusEntity)
+    private readonly userStatusRepository: Repository<UserStatusEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(

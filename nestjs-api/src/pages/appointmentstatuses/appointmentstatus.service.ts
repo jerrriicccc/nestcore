@@ -106,7 +106,7 @@ export class StatusService {
     };
   }
 
-  async findPaginated(
+  async getMainIndexTable(
     entity: EntityTarget<StatusEntity>,
     page = 1,
     searchCond = '',
@@ -134,7 +134,7 @@ export class StatusService {
         meta: this.paginationMeta(result.meta),
       };
     } catch (error) {
-      console.error('Error in findPaginated:', error);
+      console.error('Error in getMainIndexTable:', error);
       throw new InternalServerErrorException('Failed to fetch paginated data');
     }
   }

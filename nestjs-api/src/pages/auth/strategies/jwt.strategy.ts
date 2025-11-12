@@ -10,8 +10,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET') || 'defaultsecret',
-      issuer: 'nestjs-api',
-      audience: 'typescript-app',
+      issuer: configService.get<string>('JWT_ISSUER', 'nestjs-api'),
+      audience: configService.get<string>('JWT_AUDIENCE', 'typescript-app'),
     });
   }
 

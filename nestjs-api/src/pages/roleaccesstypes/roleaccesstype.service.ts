@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, ObjectLiteral, EntityTarget } from 'typeorm';
-import { RoleAccessType } from './entity/roleaccesstype.entity';
+import { RoleAccessTypeEntity } from './entity/roleaccesstype.entity';
 
 @Injectable()
 export class RoleAccessTypesService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(RoleAccessType)
-    private readonly roleAccessTypeRepository: Repository<RoleAccessType>,
+    @InjectRepository(RoleAccessTypeEntity)
+    private readonly roleAccessTypeRepository: Repository<RoleAccessTypeEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -25,7 +25,7 @@ export class RoleAccessTypesService {
   async getRoleAccessTypesOptions(): Promise<
     { value: string; label: string }[]
   > {
-    const repo = this.getRepository(RoleAccessType);
+    const repo = this.getRepository(RoleAccessTypeEntity);
     const list = await repo.find();
 
     return list.map((item) => ({

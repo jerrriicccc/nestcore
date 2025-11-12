@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
 @Entity('appointments')
-export class Appointment {
+export class AppointmentEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

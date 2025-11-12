@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { UserStatus } from '../../userstatuses/entity/userstatuses.entity';
+import { UserStatusEntity } from '../../userstatuses/entity/userstatuses.entity';
 
 @Entity('customers')
 export class Customer {

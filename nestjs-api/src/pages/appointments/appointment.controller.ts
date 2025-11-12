@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { CreateDto, UpdateDto } from './dto/appointments.dto';
-import { Appointment } from './entity/appointment.entity';
+import { AppointmentEntity } from './entity/appointment.entity';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
@@ -46,9 +46,14 @@ export class AppointmentController {
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
     if (!hasReadAccess(req)) return denyRoleBasedAccess();
 
-    const result = await this.appointmentService.getMainIndexTable(Appointment);
-
-    return { data: result };
+    const page = Number(query.page) || 1;
+    const searchCond = query.searchcond || '';
+    const result = await this.appointmentService.getMainIndexTable(
+      AppointmentEntity,
+      page,
+      searchCond,
+    );
+    return result;
   }
 
   @Get('getcard')
@@ -57,7 +62,7 @@ export class AppointmentController {
     if (!hasReadAccess(req)) return denyRoleBasedAccess();
     if (!id) throw new BadRequestException('No id Found');
 
-    const result = await this.appointmentService.findOne(Appointment, id);
+    const result = await this.appointmentService.findOne(AppointmentEntity, id);
     return { data: result };
   }
 
@@ -67,10 +72,10 @@ export class AppointmentController {
   async create(@Body() createDto: CreateDto, @Req() req: Request) {
     if (!hasCreateAccess(req)) return denyRoleBasedAccess();
 
-    // const userEmail = await this.authService.getLoggedInByUser(req);
-    // if (!userEmail) throw new BadRequestException('User not found');
-
-    const result = await this.appointmentService.create(Appointment, createDto);
+    const result = await this.appointmentService.create(
+      AppointmentEntity,
+      createDto,
+    );
     return { data: result };
   }
 
@@ -82,7 +87,7 @@ export class AppointmentController {
     if (!updateDto.id) throw new BadRequestException('No id Found');
 
     const result = await this.appointmentService.update(
-      Appointment,
+      AppointmentEntity,
       updateDto.id,
       updateDto,
     );
@@ -96,7 +101,7 @@ export class AppointmentController {
     if (!hasDeleteAccess(req)) return denyRoleBasedAccess();
     if (!id) throw new BadRequestException('No id Found');
 
-    await this.appointmentService.delete(Appointment, id);
+    await this.appointmentService.delete(AppointmentEntity, id);
     return { message: 'Deleted successfully', id };
   }
 }

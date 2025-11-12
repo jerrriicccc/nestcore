@@ -148,8 +148,8 @@ const Controller = () => {
         // }
         // searchPane={<SearchPane onSearch={handleSearch} />}
       />
-      {alertMessage && <AlertMessages {...alertMessage} />}
-      <AuthorizationAlert />
+      {/* {alertMessage && <AlertMessages {...alertMessage} />} */}
+      <AuthorizationAlert status={appointmentStatus} dependsOn={["read", "create", "update", "delete"]} />
 
       {/* TABLE */}
       <div className="px-4">

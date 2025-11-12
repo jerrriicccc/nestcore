@@ -14,20 +14,20 @@ import {
   DeepPartial,
   In,
 } from 'typeorm';
-import { User } from './entity/user.entity';
+import { UserEntity } from './entity/user.entity';
 import * as argon2 from 'argon2';
 import { paginate } from 'nestjs-typeorm-paginate';
-import { UserStatus } from 'src/pages/userstatuses/entity/userstatuses.entity';
-import { Role } from '../roles/entity/role.entity';
+import { UserStatusEntity } from 'src/pages/userstatuses/entity/userstatuses.entity';
+import { RoleEntity } from '../roles/entity/role.entity';
 
 @Injectable()
 export class UserService {
-  private readonly DEFAULT_PAGE_LIMIT = 5;
+  private readonly DEFAULT_PAGE_LIMIT = 1;
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
+    @InjectRepository(RoleEntity)
+    private readonly roleRepository: Repository<RoleEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -41,7 +41,7 @@ export class UserService {
   }
 
   async findByEmail(email: string) {
-    const user = await this.getRepository(User)
+    const user = await this.getRepository(UserEntity)
       .createQueryBuilder('user')
       .where('user.email = :email', { email })
       .addSelect('user.password')
@@ -51,7 +51,7 @@ export class UserService {
   }
 
   async findAll() {
-    return await this.getRepository(User).find();
+    return await this.getRepository(UserEntity).find();
   }
 
   async findOne<T extends ObjectLiteral>(entity: EntityTarget<T>, id: number) {
@@ -62,8 +62,8 @@ export class UserService {
     return data;
   }
 
-  async create(data: DeepPartial<User>) {
-    const repo = this.getRepository(User);
+  async create(data: DeepPartial<UserEntity>) {
+    const repo = this.getRepository(UserEntity);
     const existing = await repo.findOne({ where: { email: data.email } });
 
     if (existing) throw new BadRequestException('Email is already registered');
@@ -79,9 +79,9 @@ export class UserService {
     return safeUser;
   }
 
-  async update(id: number, data: DeepPartial<User>) {
+  async update(id: number, data: DeepPartial<UserEntity>) {
     console.log('Updating user with data:', { id, data });
-    const repo = this.getRepository(User);
+    const repo = this.getRepository(UserEntity);
     const existing = await repo.findOne({ where: { id } });
 
     if (!existing) throw new NotFoundException(`User with ID ${id} not found`);
@@ -92,7 +92,7 @@ export class UserService {
   }
 
   async delete(id: number) {
-    const repo = this.getRepository(User);
+    const repo = this.getRepository(UserEntity);
     const existing = await repo.findOne({ where: { id } });
 
     if (!existing) throw new NotFoundException(`User with ID ${id} not found`);
@@ -103,8 +103,6 @@ export class UserService {
 
   private buildSearchQuery(queryBuilder: any, searchCond: string) {
     queryBuilder;
-    // .leftJoinAndSelect('user.UserStatus', 'UserStatus')
-    // .leftJoinAndSelect('user.defaultRole', 'defaultRole');
 
     if (searchCond) {
       queryBuilder.where(
@@ -126,13 +124,13 @@ export class UserService {
   }
 
   private async getStatusName(statusid: number): Promise<string> {
-    const repo = this.getRepository(UserStatus);
+    const repo = this.getRepository(UserStatusEntity);
     const status = await repo.findOne({ where: { id: statusid } as any });
     const result = status?.status || 'Unknown';
     return result;
   }
   private async getDefaultRoleName(defaultroleid: number): Promise<string> {
-    const repo = this.getRepository(Role);
+    const repo = this.getRepository(RoleEntity);
     const defrolerid = await repo.findOne({
       where: { id: defaultroleid } as any,
     });
@@ -141,7 +139,7 @@ export class UserService {
   }
 
   private async formatBirthdate(birthdate: string): Promise<string | null> {
-    const repo = this.getRepository(User);
+    const repo = this.getRepository(UserEntity);
     const user = await repo.findOne({ where: { birthdate } as any });
     if (user && user.birthdate) {
       return new Intl.DateTimeFormat('en-US', {
@@ -153,16 +151,7 @@ export class UserService {
     return null;
   }
 
-  // private async getDefaultRoleName(id: number): Promise<string> {
-  //   const repo = this.getRepository(Role);
-  //   const data = await repo.findOne({
-  //     where: { id },
-  //   });
-  //   const result = data?.name || 'Unknown';
-  //   return result;
-  // }
-
-  private async resultData(data: User[]) {
+  private async resultData(data: UserEntity[]) {
     const result = await Promise.all(
       data.map(async (data: any) => {
         const statusName = await this.getStatusName(data.statusid);
@@ -193,8 +182,8 @@ export class UserService {
     };
   }
 
-  async findPaginated(
-    entity: EntityTarget<User>,
+  async getMainIndexTable(
+    entity: EntityTarget<UserEntity>,
     page = 1,
     searchCond = '',
     limit = this.DEFAULT_PAGE_LIMIT,
@@ -213,7 +202,7 @@ export class UserService {
 
       this.buildSearchQuery(queryBuilder, searchCond);
 
-      const result = await paginate<User>(queryBuilder, {
+      const result = await paginate<UserEntity>(queryBuilder, {
         page: Math.max(1, page),
         limit,
       });
@@ -223,7 +212,7 @@ export class UserService {
         meta: this.paginationMeta(result.meta),
       };
     } catch (error) {
-      console.error('Error in findPaginated:', error);
+      console.error('Error in getMainIndexTable:', error);
       throw new InternalServerErrorException('Failed to fetch paginated data');
     }
   }

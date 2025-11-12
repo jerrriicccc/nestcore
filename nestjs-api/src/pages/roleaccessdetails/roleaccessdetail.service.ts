@@ -14,9 +14,9 @@ import {
   In,
 } from 'typeorm';
 import { RoleAccessDetailEntity } from './entity/roleaccessdetail.entity';
-import { RoleAccessOption } from '../roleaccessoptions/entity/roleaccessoption.entity';
+import { RoleAccessOptionEntity } from '../roleaccessoptions/entity/roleaccessoption.entity';
 import { paginate } from 'nestjs-typeorm-paginate';
-import { RoleAccessType } from 'src/pages/roleaccesstypes/entity/roleaccesstype.entity';
+import { RoleAccessTypeEntity } from 'src/pages/roleaccesstypes/entity/roleaccesstype.entity';
 
 @Injectable()
 export class RoleAccessDetailsService {
@@ -27,10 +27,10 @@ export class RoleAccessDetailsService {
     private readonly dataSource: DataSource,
     @InjectRepository(RoleAccessDetailEntity)
     private readonly roleAccessDetailsRepository: Repository<RoleAccessDetailEntity>,
-    @InjectRepository(RoleAccessOption)
-    private readonly roleAccessOptionRepository: Repository<RoleAccessOption>,
-    @InjectRepository(RoleAccessType)
-    private readonly roleAccessTypeRepository: Repository<RoleAccessType>,
+    @InjectRepository(RoleAccessOptionEntity)
+    private readonly roleAccessOptionRepository: Repository<RoleAccessOptionEntity>,
+    @InjectRepository(RoleAccessTypeEntity)
+    private readonly roleAccessTypeRepository: Repository<RoleAccessTypeEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -116,7 +116,7 @@ export class RoleAccessDetailsService {
   // }
 
   private async getTypeNames(typeid: number): Promise<string> {
-    const repo = this.getRepository(RoleAccessType);
+    const repo = this.getRepository(RoleAccessTypeEntity);
     const type = await repo.findOne({ where: { id: typeid } as any });
     return type?.name || 'Unknown';
   }
@@ -153,7 +153,7 @@ export class RoleAccessDetailsService {
     };
   }
 
-  async findPaginated(
+  async getMainIndexTable(
     entity: EntityTarget<RoleAccessDetailEntity>,
     page = 1,
     searchCond = '',
@@ -182,7 +182,7 @@ export class RoleAccessDetailsService {
         meta: this.paginationMeta(result.meta),
       };
     } catch (error) {
-      console.error('Error in findPaginated:', error);
+      console.error('Error in getMainIndexTable:', error);
       throw new InternalServerErrorException('Failed to fetch paginated data');
     }
   }

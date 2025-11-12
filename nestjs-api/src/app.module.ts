@@ -6,21 +6,15 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { SecurityMiddleware } from './middleware/security.middleware';
 
 // ENTITIES
-import { User } from './pages/users/entity/user.entity';
-import { UserStatus } from './pages/userstatuses/entity/userstatuses.entity';
-import { Role } from './pages/roles/entity/role.entity';
+import { UserEntity } from './pages/users/entity/user.entity';
+import { UserStatusEntity } from './pages/userstatuses/entity/userstatuses.entity';
+import { RoleEntity } from './pages/roles/entity/role.entity';
 import { RoleAccessDetailEntity } from './pages/roleaccessdetails/entity/roleaccessdetail.entity';
-import { RoleAccessType } from './pages/roleaccesstypes/entity/roleaccesstype.entity';
-import { RoleAccessOption } from './pages/roleaccessoptions/entity/roleaccessoption.entity';
-import { RoleLine } from './pages/rolelines/entity/roleline.entity';
-import { Appointment } from './pages/appointments/entity/appointment.entity';
-import { GroomServiceEntity } from './pages/groomservice/entity/groomservice.entity';
-import { DaycareServiceEntity } from './pages/daycareservice/entity/daycareservice.entity';
-import { AdditionalServiceEntity } from './pages/additionalservice/entity/additionalservice.entity';
-import { TimeScheduleEntity } from './pages/timeschedule/entity/timeschedule.entity';
+import { RoleAccessTypeEntity } from './pages/roleaccesstypes/entity/roleaccesstype.entity';
+import { RoleAccessOptionEntity } from './pages/roleaccessoptions/entity/roleaccessoption.entity';
+import { RoleLineEntity } from './pages/rolelines/entity/roleline.entity';
+import { AppointmentEntity } from './pages/appointments/entity/appointment.entity';
 import { StatusEntity } from './pages/appointmentstatuses/entity/appointmentstatus.entity';
-import { CategoryTypeEntity } from './pages/categorytype/entity/categorytype.entity';
-import { PetEntryLineEntity } from './pages/petentrylines/entity/petentryline.entity';
 import { AppointmentNumberEntity } from './pages/appointmentnumbers/entity/appointmentnumber.entity';
 import { AppointmentSettingEntity } from './pages/appointmentsetting/entity/appointmentsetting.entity';
 
@@ -35,13 +29,7 @@ import { RoleAccessTypesModule } from './pages/roleaccesstypes/roleaccesstype.mo
 import { RoleAccessOptionsModule } from './pages/roleaccessoptions/roleaccessoption.module';
 import { RoleLinesModule } from './pages/rolelines/roleline.module';
 import { AppointmentModule } from './pages/appointments/appointment.module';
-import { GroomServiceModule } from './pages/groomservice/groomservice.module';
-import { DaycareServiceModule } from './pages/daycareservice/daycareservice.module';
-import { AdditionalServiceModule } from './pages/additionalservice/additionalservice.module';
-import { TimeScheduleModule } from './pages/timeschedule/timeschedule.module';
 import { StatusModule } from './pages/appointmentstatuses/appointmentstatus.module';
-import { CategoryTypeModule } from './pages/categorytype/categorytype.module';
-import { PetEntryLineModule } from './pages/petentrylines/petentryline.module';
 import { AppointmentNumberModule } from './pages/appointmentnumbers/appointmentnumber.module';
 import { AppointmentSettingModule } from './pages/appointmentsetting/appointmentsetting.module';
 
@@ -59,21 +47,15 @@ import { AppointmentSettingModule } from './pages/appointmentsetting/appointment
         database: configService.get<string>('DB_DATABASE', 'nestjsds'),
         charset: 'utf8mb4',
         entities: [
-          User,
-          UserStatus,
-          Role,
+          UserEntity,
+          UserStatusEntity,
+          RoleEntity,
           RoleAccessDetailEntity,
-          RoleAccessType,
-          RoleAccessOption,
-          RoleLine,
-          Appointment,
-          GroomServiceEntity,
-          DaycareServiceEntity,
-          AdditionalServiceEntity,
-          TimeScheduleEntity,
+          RoleAccessTypeEntity,
+          RoleAccessOptionEntity,
+          RoleLineEntity,
+          AppointmentEntity,
           StatusEntity,
-          CategoryTypeEntity,
-          PetEntryLineEntity,
           AppointmentNumberEntity,
           AppointmentSettingEntity,
         ],
@@ -97,13 +79,7 @@ import { AppointmentSettingModule } from './pages/appointmentsetting/appointment
     RoleAccessOptionsModule,
     RoleLinesModule,
     AppointmentModule,
-    GroomServiceModule,
-    DaycareServiceModule,
-    AdditionalServiceModule,
-    TimeScheduleModule,
     StatusModule,
-    CategoryTypeModule,
-    PetEntryLineModule,
     AppointmentNumberModule,
     AppointmentSettingModule,
   ],

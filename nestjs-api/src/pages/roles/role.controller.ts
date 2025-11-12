@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { RolesService } from './role.service';
 import { CreateDto, UpdateDto } from './dto/role.dto';
-import { Role } from './entity/role.entity';
+import { RoleEntity } from './entity/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Request } from 'express';
@@ -68,12 +68,12 @@ export class RolesController {
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond?.trim() || '';
 
-    return this.rolesService.findPaginated(Role, page, searchCond);
+    return this.rolesService.getMainIndexTable(RoleEntity, page, searchCond);
   }
 
   @Get('getcard')
   async findOne(@Query('id', ParseIntPipe) id: number) {
-    const result = await this.rolesService.findOne(Role, id);
+    const result = await this.rolesService.findOne(RoleEntity, id);
     return { data: result };
   }
 
@@ -81,7 +81,10 @@ export class RolesController {
   async create(@Body() createDto: CreateDto, @Req() req: Request) {
     // RBAC: Only SUPER-ADMIN can access this endpoint
     // this.validateAccessService.check((req as any).user, [1]); // 1 = SUPER-ADMIN
-    const result = (await this.rolesService.create(Role, createDto)) as Role;
+    const result = (await this.rolesService.create(
+      RoleEntity,
+      createDto,
+    )) as RoleEntity;
     const accessd = await this.rolesService.getGlobalAccessData(result.id);
 
     return {
@@ -96,7 +99,7 @@ export class RolesController {
       throw new BadRequestException('ID is required for updating');
     }
     const result = await this.rolesService.update(
-      Role,
+      RoleEntity,
       updateDto.id,
       updateDto,
     );
@@ -105,6 +108,6 @@ export class RolesController {
 
   @Delete('deletecard')
   async delete(@Body('id', ParseIntPipe) id: number) {
-    return this.rolesService.delete(Role, id);
+    return this.rolesService.delete(RoleEntity, id);
   }
 }

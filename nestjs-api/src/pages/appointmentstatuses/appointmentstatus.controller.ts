@@ -32,7 +32,7 @@ export class StatusesController {
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 
-    return await this.statusService.findPaginated(
+    return await this.statusService.getMainIndexTable(
       StatusEntity,
       page,
       searchCond,

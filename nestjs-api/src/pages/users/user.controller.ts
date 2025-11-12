@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateDto, UpdateDto } from './dto/user.dto';
-import { User } from './entity/user.entity';
+import { UserEntity } from './entity/user.entity';
 import { RolesService } from '../roles/role.service';
 import { Request } from 'express';
 import { ValidateAccessService } from '../../component/validateaccess/ValidateAccessComponent';
@@ -48,17 +48,19 @@ export class UserController {
 
   @Get('index')
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
-    // this.validateAccessService.check((req as any).user, [1]); // 1 = SUPER-ADMIN
-
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 
-    return await this.userService.findPaginated(User, page, searchCond);
+    return await this.userService.getMainIndexTable(
+      UserEntity,
+      page,
+      searchCond,
+    );
   }
 
   @Get('getcard')
   async findOne(@Query('id', ParseIntPipe) id: number) {
-    const result = await this.userService.findOne(User, id);
+    const result = await this.userService.findOne(UserEntity, id);
     return { data: result };
   }
 

@@ -18,7 +18,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from 'src/pages/auth/dto/login.dto';
 import { CreateDto } from 'src/pages/users/dto/user.dto';
 import { RateLimitGuard } from './rate-limit.guard';
-import { User } from '../users/entity/user.entity';
+import { UserEntity } from '../users/entity/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomInt } from 'crypto';
@@ -33,8 +33,8 @@ export class AuthController {
 
   constructor(
     private authService: AuthService,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   // Passport-based GitHub OAuth endpoints (Best Practice)
@@ -361,7 +361,9 @@ export class AuthController {
    * Find existing user by email
    * Only authenticates users that already exist in the database
    */
-  private async findExistingUserByEmail(email: string): Promise<User | null> {
+  private async findExistingUserByEmail(
+    email: string,
+  ): Promise<UserEntity | null> {
     return this.authService.findAndActivateUserByEmail(email);
   }
 

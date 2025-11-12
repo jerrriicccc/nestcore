@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { UserStatusesService } from './userstatuses.service';
 import { CreateDto, UpdateDto } from './dto/userstatuses.dto';
-import { UserStatus } from './entity/userstatuses.entity';
+import { UserStatusEntity } from './entity/userstatuses.entity';
 
 @Controller('userstatuses')
 export class UserStatusesController {
@@ -19,18 +19,21 @@ export class UserStatusesController {
 
   @Get('index')
   async findAll() {
-    return this.userStatusesService.findAll(UserStatus);
+    return this.userStatusesService.findAll(UserStatusEntity);
   }
 
   @Get('getcard')
   async findOne(@Query('id', ParseIntPipe) id: number) {
-    const result = await this.userStatusesService.findOne(UserStatus, id);
+    const result = await this.userStatusesService.findOne(UserStatusEntity, id);
     return { data: result };
   }
 
   @Post('newcard')
   async create(@Body() createDto: CreateDto) {
-    const result = await this.userStatusesService.create(UserStatus, createDto);
+    const result = await this.userStatusesService.create(
+      UserStatusEntity,
+      createDto,
+    );
     return { data: result };
   }
 
@@ -41,7 +44,7 @@ export class UserStatusesController {
     }
 
     const result = await this.userStatusesService.update(
-      UserStatus,
+      UserStatusEntity,
       updateDto.id,
       updateDto,
     );
@@ -50,6 +53,6 @@ export class UserStatusesController {
 
   @Delete('deletecard')
   async delete(@Body('id', ParseIntPipe) id: number) {
-    return this.userStatusesService.delete(UserStatus, id);
+    return this.userStatusesService.delete(UserStatusEntity, id);
   }
 }

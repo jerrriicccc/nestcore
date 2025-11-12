@@ -35,12 +35,33 @@ interface UseRedirectOnErrorStatusProps {
   errorCode: number;
 }
 
-export const useRedirectOnErrorStatus = ({ path, statusState, action, errorCode }: UseRedirectOnErrorStatusProps) => {
+interface UseRedirectOnErrorStatusOptions extends UseRedirectOnErrorStatusProps {
+  // If provided, this callback will be invoked with the response body when an access-denied (errorCode) occurs.
+  // If the callback is provided, the hook will NOT navigate; it will call this callback instead.
+  onAccessDenied?: (responseBody: any) => void;
+}
+
+export const useRedirectOnErrorStatus = ({ path, statusState, action, errorCode, onAccessDenied }: UseRedirectOnErrorStatusOptions) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (statusState.action === action && statusState.status === "error" && statusState.body.response.status === errorCode) {
-      navigate(path);
+    if (statusState.action === action && statusState.status === "error") {
+      const resp = statusState.body?.response || statusState.body;
+      const statusCode = resp?.status || resp?.code || null;
+
+      if (statusCode === errorCode) {
+        if (typeof onAccessDenied === "function") {
+          try {
+            onAccessDenied(resp);
+          } catch (err) {
+            console.error("onAccessDenied callback threw an error:", err);
+            // Fallback to navigate if callback fails
+            navigate(path);
+          }
+        } else {
+          navigate(path);
+        }
+      }
     }
   }, [statusState]);
 };

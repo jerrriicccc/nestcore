@@ -7,15 +7,15 @@ import {
   EntityTarget,
   DeepPartial,
 } from 'typeorm';
-import { RoleAccessOption } from './entity/roleaccessoption.entity';
+import { RoleAccessOptionEntity } from './entity/roleaccessoption.entity';
 
 @Injectable()
 export class RoleAccessOptionsService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(RoleAccessOption)
-    private readonly roleAccessOptionRepository: Repository<RoleAccessOption>,
+    @InjectRepository(RoleAccessOptionEntity)
+    private readonly roleAccessOptionRepository: Repository<RoleAccessOptionEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -29,7 +29,7 @@ export class RoleAccessOptionsService {
   }
 
   async getRoleAccessOptions(): Promise<{ value: string; label: string }[]> {
-    const repo = this.getRepository(RoleAccessOption);
+    const repo = this.getRepository(RoleAccessOptionEntity);
     const list = await repo.find();
 
     return list.map((item) => ({

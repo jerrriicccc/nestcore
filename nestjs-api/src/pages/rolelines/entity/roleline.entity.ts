@@ -4,7 +4,7 @@ import Transformer from '../../../component/Transformer';
 @Entity('rolelines')
 @Index(['accesskey'])
 @Index(['roleid'])
-export class RoleLine {
+export class RoleLineEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

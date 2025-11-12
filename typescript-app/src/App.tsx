@@ -39,7 +39,6 @@ const RoleAccessCard = lazy(() => import("./pages/roleaccesscard/Controller"));
 
 // Services
 const ServiceSettingHome = lazy(() => import("./pages/servicesettinghome/Controller"));
-const AdditionalService = lazy(() => import("./pages/additionalservice/Controller"));
 const StatusCard = lazy(() => import("./pages/statuses/Controller"));
 const WorkflowSettCard = lazy(() => import("./pages/workflowsettings/Controller"));
 
@@ -167,14 +166,6 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SuspenseExt body={<RoleAccessCard />} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/additionalservice/:mode",
-        element: (
-          <ProtectedRoute>
-            <SuspenseExt body={<AdditionalService />} />
           </ProtectedRoute>
         ),
       },

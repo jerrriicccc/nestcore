@@ -16,10 +16,10 @@ import { RoleAccessDetailEntity } from './entity/roleaccessdetail.entity';
 import { RoleAccessTypesService } from 'src/pages/roleaccesstypes/roleaccesstype.service';
 import { RoleAccessOptionsService } from 'src/pages/roleaccessoptions/roleaccessoption.service';
 import { CreateDto as CreateRoleLineDto } from 'src/pages/rolelines/dto/roleline.dto';
-import { RoleLine } from '../rolelines/entity/roleline.entity';
+import { RoleLineEntity } from '../rolelines/entity/roleline.entity';
 import { RoleLinesService } from 'src/pages/rolelines/roleline.service';
 import { RolesService } from '../roles/role.service';
-import { Role } from '../roles/entity/role.entity';
+import { RoleEntity } from '../roles/entity/role.entity';
 
 interface PaginationQuery {
   page?: number;
@@ -60,7 +60,7 @@ export class RoleAccessDetailsController {
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond?.trim() || '';
 
-    return this.roleAccessDetailsService.findPaginated(
+    return this.roleAccessDetailsService.getMainIndexTable(
       RoleAccessDetailEntity,
       page,
       searchCond,
@@ -82,7 +82,7 @@ export class RoleAccessDetailsController {
       RoleAccessDetailEntity,
       createDto,
     );
-    const getRoleId = await this.rolesService.findAll(Role);
+    const getRoleId = await this.rolesService.findAll(RoleEntity);
 
     // Loop through roles and create RoleLine for each
     for (const getrole of getRoleId) {
@@ -94,7 +94,7 @@ export class RoleAccessDetailsController {
         accessvalue: [],
         grantypeid: 0,
       };
-      await this.roleLineService.create(RoleLine, createRoleLineDto);
+      await this.roleLineService.create(RoleLineEntity, createRoleLineDto);
     }
 
     return { data: result };

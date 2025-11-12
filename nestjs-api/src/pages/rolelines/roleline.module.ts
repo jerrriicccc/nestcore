@@ -2,13 +2,13 @@ import { Module, forwardRef } from '@nestjs/common';
 import { RoleLinesService } from './roleline.service';
 import { RoleLinesController } from './roleline.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RoleLine } from './entity/roleline.entity';
+import { RoleLineEntity } from './entity/roleline.entity';
 import { RoleAccessDetailEntity } from '../roleaccessdetails/entity/roleaccessdetail.entity';
 import { RoleAccessDetailsModule } from 'src/pages/roleaccessdetails/roleaccessdetail.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RoleLine, RoleAccessDetailEntity]),
+    TypeOrmModule.forFeature([RoleLineEntity, RoleAccessDetailEntity]),
     forwardRef(() => RoleAccessDetailsModule),
   ],
   providers: [RoleLinesService],
