@@ -69,13 +69,13 @@ const RoleAccessForm = ({ data = { name: "", typeid: "", accesskey: "", access: 
       <div className="p-3">
         <Row>
           <Col md={4}>
-            <TextInput name="name" label="Name" data={data.name} onChange={onChange} error={errors.name} />
-          </Col>
-          <Col md={4}>
             <SelectInput name="typeid" label="Type" data={data.typeid} onChange={onChange} error={errors.typeid} options={selectOptions.type} />
           </Col>
           <Col md={4}>
             <TextInput name="accesskey" label="Access Key" data={data.accesskey} onChange={onChange} error={errors.accesskey} />
+          </Col>
+          <Col md={4}>
+            <TextInput name="name" label="Name" data={data.name} onChange={onChange} error={errors.name} />
           </Col>
         </Row>
         <Row>

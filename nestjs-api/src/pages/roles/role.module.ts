@@ -9,7 +9,6 @@ import { RoleLineEntity } from '../rolelines/entity/roleline.entity';
 import { RoleLinesModule } from '../rolelines/roleline.module';
 import { Customer } from '../customers/entity/customers.entity';
 import { CustomersModule } from '../customers/customer.module';
-import { ValidateAccessService } from '../../component/validateaccess/ValidateAccessComponent';
 
 @Module({
   imports: [
@@ -23,8 +22,8 @@ import { ValidateAccessService } from '../../component/validateaccess/ValidateAc
     RoleLinesModule,
     CustomersModule,
   ],
-  providers: [RolesService, ValidateAccessService],
+  providers: [RolesService],
   controllers: [RolesController],
-  exports: [RolesService, TypeOrmModule, ValidateAccessService],
+  exports: [RolesService, TypeOrmModule],
 })
 export class RolesModule {}

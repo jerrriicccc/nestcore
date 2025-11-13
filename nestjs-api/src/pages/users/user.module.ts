@@ -4,13 +4,12 @@ import { UserEntity } from './entity/user.entity';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { RolesModule } from '../roles/role.module';
-import { ValidateAccessService } from '../../component/validateaccess/ValidateAccessComponent';
 import { RoleEntity } from '../roles/entity/role.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserEntity, RoleEntity]), RolesModule],
-  providers: [UserService, ValidateAccessService],
+  providers: [UserService],
   controllers: [UserController],
-  exports: [UserService, TypeOrmModule, ValidateAccessService],
+  exports: [UserService, TypeOrmModule],
 })
 export class UserModule {}

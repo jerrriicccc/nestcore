@@ -10,12 +10,11 @@ interface TokenValidationResponse {
   payload?: any;
 }
 
-interface ValidateUserAccessOptions {
+export interface ValidateUserAccessOptions {
   RBACModule?: string;
   dataSource?: DataSource;
 }
 
-// Global DataSource instance - will be set by the application
 let globalDataSource: DataSource | null = null;
 
 /**
@@ -26,9 +25,37 @@ export function setRBACDataSource(dataSource: DataSource): void {
   globalDataSource = dataSource;
 }
 
+/**
+ * Get header value in a case-insensitive way
+ * @param request - Express request object
+ * @param headerName - Header name to look for (case-insensitive)
+ * @returns Header value as string or null
+ */
+function getHeaderCaseInsensitive(
+  request: Request,
+  headerName: string,
+): string | null {
+  const lowerHeaderName = headerName.toLowerCase();
+  const headers = request.headers;
+
+  // Check all header keys for case-insensitive match
+  for (const key in headers) {
+    if (key.toLowerCase() === lowerHeaderName) {
+      const value = headers[key];
+      return typeof value === 'string'
+        ? value
+        : Array.isArray(value)
+          ? value[0]
+          : null;
+    }
+  }
+
+  return null;
+}
+
 export function getTokenFromHeader(request: Request): string[] | null {
   const authHeader = request.headers.authorization;
-  if (!authHeader) return null;
+  if (!authHeader || typeof authHeader !== 'string') return null;
 
   const auth = authHeader.split(' '); // ["Bearer", "token"]
   if (auth.length !== 2 || auth[0] !== 'Bearer') return null;
@@ -38,23 +65,17 @@ export function getTokenFromHeader(request: Request): string[] | null {
 }
 
 export function getRBACTokenFromHeader(request: Request): string[] | null {
-  // Handle case-insensitive header access
-  const rbacHeader = request.headers['x-rbac-token'] as string;
+  const rbacHeader = getHeaderCaseInsensitive(request, 'x-rbac-token');
+  if (!rbacHeader || typeof rbacHeader !== 'string') return null;
 
-  if (!rbacHeader) return null;
   const auth = rbacHeader.split(' ');
-
-  // Extract the actual token part
   const tokenString = auth.length >= 2 ? auth[1] : rbacHeader;
-
   const token = tokenString.split('.');
 
   // RBAC token should have 2 parts: payload.signature
   if (token.length === 2) {
     return token;
   } else if (token.length === 3) {
-    // If it's a 3-part JWT, we need to extract the correct parts
-    // For RBAC, we typically want parts 1 and 2 (payload and signature)
     return [token[1], token[2]];
   }
 
@@ -88,10 +109,8 @@ function signTokenBase64(
 export function generateRBACToken(
   accessToken: string,
   user: any,
-  module: string = 'appointments',
   encryptedAccessData?: string,
 ): string {
-  // Decode the access token to get its header
   const accessTokenParts = accessToken.split('.');
   if (accessTokenParts.length !== 3) {
     throw new Error('Invalid access token format');
@@ -102,11 +121,11 @@ export function generateRBACToken(
   // Create RBAC payload
   const rbacPayload = {
     sub: user.id,
-    email: user.email,
-    id: user.id, // This should match the access token header id
-    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24 hours
+    // email: user.email,
+    id: user.id,
+    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60,
     iat: Math.floor(Date.now() / 1000),
-    auth: encryptedAccessData || null, // Include encrypted access data
+    auth: encryptedAccessData || null,
   };
 
   // Encode the payload
@@ -116,19 +135,24 @@ export function generateRBACToken(
     .replace(/\//g, '_')
     .replace(/=/g, '');
 
-  // Sign the token using the access token header and RBAC payload
   const signature = signTokenBase64(accessTokenHeader, encodedPayload);
 
-  // Return the RBAC token (payload.signature format)
   return `${encodedPayload}.${signature}`;
 }
 
-// Helper function to decode base64 to JSON
+// Helper function to decode base64 to JSON (handles URL-safe base64)
 function decodeBase64ToJSON(base64String: string): any {
   try {
-    return JSON.parse(Buffer.from(base64String, 'base64').toString());
+    let base64 = base64String.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+
+    return JSON.parse(Buffer.from(base64, 'base64').toString('utf8'));
   } catch (error) {
-    throw new Error('Invalid base64 JSON format');
+    throw new Error(
+      `Invalid base64 JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 }
 
@@ -141,69 +165,29 @@ function decodeBase64ToJSON(base64String: string): any {
  */
 function decryptCipher8(encryptedData: string): string {
   // Method 1: Try AES-256-CBC with IV (most common)
-  try {
-    const algorithm = 'aes-256-cbc';
-    const secretKey =
-      process.env.ENCRYPTION_KEY || 'your-32-character-secret-key-here';
-    const key = crypto.scryptSync(secretKey, 'salt', 32);
+  const algorithm = 'aes-256-cbc';
+  const secretKey =
+    process.env.ENCRYPTION_KEY || 'your-32-character-secret-key-here';
+  const key = crypto.scryptSync(secretKey, 'salt', 32);
 
-    // Split the encrypted data to get IV and encrypted content
-    const parts = encryptedData.split(':');
-    if (parts.length === 2) {
-      const iv = Buffer.from(parts[0], 'hex');
-      const encrypted = parts[1];
-
-      const decipher = crypto.createDecipheriv(algorithm, key, iv);
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-      return decrypted;
-    }
-  } catch (error) {
-    return error.message;
+  const parts = encryptedData.split(':');
+  if (parts.length !== 2) {
+    throw new Error(
+      'Invalid encrypted data format. Expected format: IV:encryptedContent',
+    );
   }
 
-  // Method 2: Try simple base64 decoding
-  try {
-    return Buffer.from(encryptedData, 'base64').toString('utf8');
-  } catch (base64Error) {
-    // Continue to next method
-  }
+  const iv = Buffer.from(parts[0], 'hex');
+  const encrypted = parts[1];
 
-  // Method 3: Try AES-192-CBC (legacy method)
-  try {
-    const algorithm = 'aes-192-cbc';
-    const secretKey =
-      process.env.ENCRYPTION_KEY || 'your-32-character-secret-key-here';
-    const key = crypto.scryptSync(secretKey, 'salt', 24);
+  const decipher = crypto.createDecipheriv(algorithm, key, iv);
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
 
-    // Generate a default IV for legacy compatibility
-    const iv = Buffer.alloc(16, 0); // Zero-filled IV for legacy compatibility
-
-    const decipher = crypto.createDecipheriv(algorithm, key, iv);
-    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
-  } catch (aes192Error) {
-    // Continue to next method
-  }
-
-  // Method 4: Try direct string (if already decrypted)
-  try {
-    return JSON.parse(encryptedData);
-  } catch (jsonError) {
-    console.error('All decryption methods failed:', {
-      aes256cbc: 'Failed',
-      base64: 'Failed',
-      aes192: 'Failed',
-      direct: 'Failed',
-    });
-    throw new Error('Failed to decrypt data - all methods exhausted');
-  }
+  return decrypted;
 }
 
 /**
- * Get controller name from request - matches PHP $this->request->params['controller']
  * @param request - Express request object
  * @returns Controller name string
  */
@@ -227,69 +211,13 @@ function getControllerFromRequest(request: Request): string {
 }
 
 /**
- * Get user's actual role permissions from database
- * @param roleId - User's role ID
- * @param moduleName - Module name (e.g., 'appointments', 'customers')
- * @param dataSource - TypeORM DataSource for database access
- * @returns Array of access permissions (e.g., ['Read', 'Create', 'Update', 'Delete'])
- */
-async function getUserRolePermissions(
-  roleId: number,
-  moduleName: string,
-  dataSource?: DataSource,
-): Promise<string[]> {
-  try {
-    // Use provided DataSource or global DataSource
-    const ds = dataSource || globalDataSource;
-
-    if (!ds) {
-      // console.log('No DataSource available, returning empty permissions');
-      return [];
-    }
-
-    // Map module name to database accesskey format
-    // Database uses singular capitalized form: appointments -> Appointment,
-    // Remove trailing 's' if plural, then capitalize first letter
-    const singular = moduleName.endsWith('s')
-      ? moduleName.slice(0, -1)
-      : moduleName;
-    const accessKey = singular.charAt(0).toUpperCase() + singular.slice(1);
-
-    // Query rolelines table for the user's role and module
-    const query = `
-      SELECT rl.accessvalue 
-      FROM rolelines rl 
-      WHERE rl.roleid = ? 
-      AND rl.accesskey = ?
-    `;
-
-    const result = await ds.query(query, [roleId, accessKey]);
-
-    if (result && result.length > 0 && result[0].accessvalue) {
-      // accessvalue is stored as JSON string, parse it
-      const accessValue =
-        typeof result[0].accessvalue === 'string'
-          ? JSON.parse(result[0].accessvalue)
-          : result[0].accessvalue;
-
-      return Array.isArray(accessValue) ? accessValue : [];
-    }
-
-    return [];
-  } catch (error) {
-    console.error('Error getting user role permissions:', error);
-    return [];
-  }
-}
-
-/**
  * Get permissions from multiple roles for a specific module
  * @param roleIds - Array of role IDs (from assignedroles)
  * @param moduleName - Module name
  * @param dataSource - TypeORM DataSource for database access
  * @returns Array of access permissions from all roles
  */
-async function getUserPermissionsFromMultipleRoles(
+async function getUserAccessRole(
   roleIds: (string | number)[],
   moduleName: string,
   dataSource?: DataSource,
@@ -307,11 +235,7 @@ async function getUserPermissionsFromMultipleRoles(
       return [];
     }
 
-    // Map module name to database accesskey format
-    const singular = moduleName.endsWith('s')
-      ? moduleName.slice(0, -1)
-      : moduleName;
-    const accessKey = singular.charAt(0).toUpperCase() + singular.slice(1);
+    const accessKey = moduleName;
 
     // Convert role IDs to numbers and filter out invalid ones
     const validRoleIds = roleIds
@@ -364,8 +288,8 @@ export async function validateUserAccess(
 ): Promise<TokenValidationResponse> {
   const response: TokenValidationResponse = { ok: false, code: 0, message: '' };
 
-  const token = await getTokenFromHeader(request);
-  const rbacToken = await getRBACTokenFromHeader(request);
+  const token = getTokenFromHeader(request);
+  const rbacToken = getRBACTokenFromHeader(request);
 
   // Check if RBAC token exists and has required parts
   if (!rbacToken || !rbacToken[0] || !rbacToken[1]) {
@@ -376,7 +300,7 @@ export async function validateUserAccess(
 
   // Verify RBAC token signature using access token header and RBAC token payload
   if (!token || !token[0]) {
-    response.code = 6; // Additional error for missing access token
+    response.code = 6;
     response.message = 'Missing Access Token for RBAC validation';
     return response;
   }
@@ -423,8 +347,6 @@ export async function validateUserAccess(
 
     // Check if auth field exists
     if (!payload.auth) {
-      // Get assigned roles from access token payload
-      // ONLY use assignedroles, do NOT use defaultroleid
       if (
         !accessTokenPayload.assignedroles ||
         !Array.isArray(accessTokenPayload.assignedroles) ||
@@ -437,7 +359,7 @@ export async function validateUserAccess(
       }
 
       const assignedRoles = accessTokenPayload.assignedroles;
-      const actualPermissions = await getUserPermissionsFromMultipleRoles(
+      const actualPermissions = await getUserAccessRole(
         assignedRoles,
         RBACModule || '',
         options.dataSource,
@@ -446,27 +368,20 @@ export async function validateUserAccess(
       // Create access object with actual database permissions
       access = {
         module: RBACModule || '',
-        access: actualPermissions, // Use actual database permissions from all assigned roles
-        role: assignedRoles, // Store all assigned roles
+        access: actualPermissions,
+        role: assignedRoles,
         userId: payload.sub,
-        email: payload.email,
+        // email: payload.email,
       };
     } else {
       try {
-        // Try to parse as JSON first (in case it's already decrypted)
         try {
           access = JSON.parse(payload.auth);
-          // console.log('Successfully parsed auth as JSON:', access);
         } catch (jsonError) {
-          // console.log('JSON parsing failed, attempting decryption...');
-          // If JSON parsing fails, try decryption
           const decryptedData = decryptCipher8(payload.auth);
-          // console.log('Decrypted data:', decryptedData);
           access = JSON.parse(decryptedData);
-          // console.log('Successfully parsed decrypted data:', access);
         }
       } catch (decryptError) {
-        // console.log('Failed to decrypt access data:', decryptError.message);
         response.code = 7;
         response.message = 'Failed to decrypt access data';
         return response;
@@ -480,7 +395,8 @@ export async function validateUserAccess(
       return response;
     }
 
-    const rbacHeader = request.headers['x-rbac-token'];
+    // Handle case-insensitive header access
+    const rbacHeader = getHeaderCaseInsensitive(request, 'x-rbac-token');
     const headerParts =
       rbacHeader && typeof rbacHeader === 'string' ? rbacHeader.split(' ') : [];
     const headerModule = headerParts.length > 0 ? headerParts[0] : null;
@@ -509,7 +425,10 @@ export async function validateUserAccess(
     return response;
   } catch (error) {
     response.code = 7;
-    response.message = 'Invalid RBAC token format or decryption failed';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    response.message = `Invalid RBAC token format or decryption failed: ${errorMessage}`;
+
     return response;
   }
 }
@@ -520,7 +439,7 @@ export async function validateToken(
 ): Promise<TokenValidationResponse> {
   const response: TokenValidationResponse = { ok: false, code: 0, message: '' };
 
-  const token = await getTokenFromHeader(request);
+  const token = getTokenFromHeader(request);
 
   // Check if token exists and has all 3 parts
   if (!token || token.length !== 3 || !token[0] || !token[1] || !token[2]) {
@@ -613,6 +532,11 @@ export async function validateRESTToken(
  * @throws Error if RBAC token is invalid or missing
  */
 export function getAccessInfoFromRBACPayload(request: Request): string[] {
+  const cachedAccess = request['rbacAccess'];
+  if (Array.isArray(cachedAccess)) {
+    return cachedAccess;
+  }
+
   const rbacToken = getRBACTokenFromHeader(request);
 
   if (!rbacToken || !rbacToken[0]) {
@@ -622,7 +546,13 @@ export function getAccessInfoFromRBACPayload(request: Request): string[] {
   const rbacPayload = decodeBase64ToJSON(rbacToken[0]);
   const access = JSON.parse(decryptCipher8(rbacPayload.auth));
 
-  return access.access || [];
+  const permissions = access.access || [];
+
+  if (Array.isArray(permissions)) {
+    request['rbacAccess'] = permissions;
+  }
+
+  return permissions;
 }
 
 /**
@@ -632,6 +562,11 @@ export function getAccessInfoFromRBACPayload(request: Request): string[] {
  * @returns True if user has the specified access
  */
 export function hasAccess(request: Request, txtAccess: string): boolean {
+  const cachedAccess = request['rbacAccess'];
+  if (Array.isArray(cachedAccess)) {
+    return cachedAccess.includes(txtAccess);
+  }
+
   try {
     const access = getAccessInfoFromRBACPayload(request);
     return Array.isArray(access) && access.includes(txtAccess);

@@ -14,8 +14,9 @@ import { MailService } from '../mail/mail.service';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { generateRBACToken } from 'src/component/validateaccess/RbacToken';
+import { generateRBACToken } from 'src/component/validateaccess/validate-rbactoken';
 import * as crypto from 'crypto';
+import { RBAC_TREE } from 'src/lib/constants';
 
 @Injectable()
 export class AuthService {
@@ -82,20 +83,18 @@ export class AuthService {
     user = await this.userRepository.findOne({ where: { email: githubEmail } });
 
     if (user) {
-      // User exists, so link their GitHub ID to their account
       user.githubId = githubProfile.id.toString();
       await this.userRepository.save(user);
       return user;
     }
 
     // If user is not found by email either, create a new user (Sign-up via GitHub)
-
     const newUser = this.userRepository.create({
       email: githubEmail,
       githubId: githubProfile.id.toString(),
-      password: randomUUID(), // Create a random password as it's required
-      statusid: 2, // Automatically verified and active
-      defaultroleid: 2, // Default role
+      password: randomUUID(),
+      statusid: 2,
+      defaultroleid: 2,
       failedloginattempts: 0,
     });
 
@@ -150,7 +149,7 @@ export class AuthService {
     }
 
     user.verificationtoken = null;
-    user.statusid = 2; // Set status to verified
+    user.statusid = 2;
     await this.userRepository.save(user);
 
     return {
@@ -236,80 +235,13 @@ export class AuthService {
   }
 
   /**
-   * Map module name from lowercase plural (appointments) to database format (Appointment)
-   * This maps the module name used in the code to the accesskey format in the database
-   * Database uses singular capitalized form: appointments -> Appointment, customers -> Customer
-   */
-  private mapModuleNameToAccessKey(moduleName: string): string {
-    // Remove trailing 's' if plural, then capitalize first letter
-    // appointments -> appointment -> Appointment
-    // customers -> customer -> Customer
-    const singular = moduleName.endsWith('s')
-      ? moduleName.slice(0, -1)
-      : moduleName;
-    return singular.charAt(0).toUpperCase() + singular.slice(1);
-  }
-
-  /**
-   * Get user's role permissions from database for a specific module
-   * @param roleId - User's role ID
-   * @param moduleName - Module name (e.g., 'appointments', 'customers')
-   * @returns Array of access permissions (e.g., ['Read', 'Create'])
-   */
-  private async getUserRolePermissions(
-    roleId: number,
-    moduleName: string,
-  ): Promise<string[]> {
-    try {
-      // Map module name to database accesskey format
-      const accessKey = this.mapModuleNameToAccessKey(moduleName);
-
-      // Query rolelines table for the user's role and module
-      const query = `
-        SELECT rl.accessvalue 
-        FROM rolelines rl 
-        WHERE rl.roleid = ? 
-        AND rl.accesskey = ?
-      `;
-
-      console.log(
-        `Getting permissions for roleId: ${roleId}, module: ${moduleName}, accessKey: ${accessKey}`,
-      );
-
-      const result = await this.dataSource.query(query, [roleId, accessKey]);
-
-      if (result && result.length > 0 && result[0].accessvalue) {
-        // accessvalue is stored as JSON string, parse it
-        const accessValue =
-          typeof result[0].accessvalue === 'string'
-            ? JSON.parse(result[0].accessvalue)
-            : result[0].accessvalue;
-
-        console.log(
-          `Found permissions for role ${roleId} on module ${moduleName}:`,
-          accessValue,
-        );
-        return Array.isArray(accessValue) ? accessValue : [];
-      }
-
-      console.log(
-        `No permissions found for role ${roleId} on module ${moduleName} (accessKey: ${accessKey})`,
-      );
-      return [];
-    } catch (error) {
-      console.error('Error getting user role permissions:', error);
-      return [];
-    }
-  }
-
-  /**
    * Get permissions from multiple roles for a specific module
    * Returns permissions from all assigned roles (without merging/removing duplicates)
    * @param roleIds - Array of role IDs (from assignedroles)
    * @param moduleName - Module name (e.g., 'appointments', 'customers')
    * @returns Array of access permissions from all roles
    */
-  private async getUserPermissionsFromMultipleRoles(
+  private async getUserAccessRole(
     roleIds: (string | number)[],
     moduleName: string,
   ): Promise<string[]> {
@@ -320,7 +252,9 @@ export class AuthService {
       }
 
       // Map module name to database accesskey format
-      const accessKey = this.mapModuleNameToAccessKey(moduleName);
+      const accessKey = moduleName;
+
+      console.log(`Access key for module ${moduleName}: ${accessKey}`);
 
       // Convert role IDs to numbers and filter out invalid ones
       const validRoleIds = roleIds
@@ -342,10 +276,6 @@ export class AuthService {
         WHERE rl.roleid IN (${validRoleIds.map(() => '?').join(',')})
         AND rl.accesskey = ?
       `;
-
-      console.log(
-        `Getting permissions for roles [${validRoleIds.join(', ')}], module: ${moduleName}, accessKey: ${accessKey}`,
-      );
 
       const results = await this.dataSource.query(query, [
         ...validRoleIds,
@@ -391,71 +321,48 @@ export class AuthService {
     try {
       // Generate access token
       const accessToken = this.generateAccessToken(user);
-
       // Generate RBAC tokens for each module
       const rbacTokens: { [key: string]: string } = {};
-      const modules = ['appointments', 'customers']; // Add more modules as needed
+      const modules = Object.values(RBAC_TREE);
 
-      // Get assigned roles - ONLY use assignedroles, do NOT use defaultroleid
       if (!user.assignedroles || user.assignedroles.length === 0) {
-        console.log(
-          `User ${user.id} has no assigned roles. Skipping RBAC token generation.`,
-        );
-        // Return response without RBAC tokens if no assigned roles
         return {
           status: 'success',
           data: {
             access_token: accessToken,
             rbac_tokens: {},
-            user: {
-              id: user.id,
-              email: user.email,
-              defaultroleid: user.defaultroleid,
-              assignedroles: user.assignedroles,
-            },
           },
         };
       }
 
       const assignedRoles = user.assignedroles;
 
-      console.log(
-        `Generating RBAC tokens for user ${user.id} with assigned roles:`,
-        assignedRoles,
-      );
-
       for (const module of modules) {
-        // Get permissions from database for this module and all assigned roles
-        const permissions = await this.getUserPermissionsFromMultipleRoles(
-          assignedRoles,
-          module,
-        );
+        const permissions = await this.getUserAccessRole(assignedRoles, module);
 
-        // If no permissions found, skip this module (user has no access)
-        if (permissions.length === 0) {
-          console.log(
-            `Skipping module ${module} - no permissions found for roles [${assignedRoles.join(', ')}]`,
-          );
-          continue;
-        }
-
-        // Create access data for the module with actual database permissions
         const accessData = {
           module: module,
-          access: permissions, // Use permissions from database (collected from all assigned roles)
-          role: assignedRoles, // Store all assigned roles
+          access: permissions,
+          // role: assignedRoles, // Store all assigned roles
           userId: user.id,
           email: user.email,
         };
 
-        // Encrypt the access data
+        // if (!permissions || permissions.length === 0) {
+        //   console.log(
+        //     `Generating empty RBAC token for module ${module} (no permissions found for roles [${assignedRoles.join(', ')}])`,
+        //   );
+        // } else {
+        //   console.log(
+        //     `Generating RBAC token for module ${module} with permissions:`,
+        //     permissions,
+        //   );
+        // }
         const encryptedAccess = this.encryptAccessData(accessData);
 
-        // Generate RBAC token with encrypted access data
         rbacTokens[module] = generateRBACToken(
           accessToken,
           user,
-          module,
           encryptedAccess,
         );
       }
@@ -465,12 +372,12 @@ export class AuthService {
         data: {
           access_token: accessToken,
           rbac_tokens: rbacTokens,
-          user: {
-            id: user.id,
-            email: user.email,
-            defaultroleid: user.defaultroleid,
-            assignedroles: user.assignedroles,
-          },
+          // user: {
+          //   id: user.id,
+          //   email: user.email,
+          //   defaultroleid: user.defaultroleid,
+          //   assignedroles: user.assignedroles,
+          // },
         },
       };
 
@@ -487,7 +394,7 @@ export class AuthService {
       id: user.id, // Add explicit id field for RBAC validation
       email: user.email,
       defaultroleid: user.defaultroleid,
-      assignedroles: user.assignedroles || [], // Include assigned roles in token
+      assignedroles: user.assignedroles || [],
       iat: Math.floor(Date.now() / 1000),
     };
 
@@ -540,31 +447,6 @@ export class AuthService {
     }
 
     return user;
-  }
-
-  async getLoggedInByUser(req: Request): Promise<string | null> {
-    const user = (req as any).user;
-    return user?.email ?? null;
-  }
-
-  async findExistingUserByEmail(email: string): Promise<UserEntity | null> {
-    try {
-      const user = await this.userRepository.findOne({
-        where: { email },
-        select: {
-          id: true,
-          email: true,
-          statusid: true,
-          defaultroleid: true,
-          assignedroles: true,
-        },
-      });
-
-      return user;
-    } catch (error) {
-      console.error('Error finding user by email:', error);
-      throw new InternalServerErrorException('Failed to find user');
-    }
   }
 
   /**

@@ -15,7 +15,6 @@ import { CreateDto, UpdateDto } from './dto/user.dto';
 import { UserEntity } from './entity/user.entity';
 import { RolesService } from '../roles/role.service';
 import { Request } from 'express';
-import { ValidateAccessService } from '../../component/validateaccess/ValidateAccessComponent';
 
 interface PaginationQuery {
   page?: number;
@@ -27,7 +26,6 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly roleService: RolesService,
-    private readonly validateAccessService: ValidateAccessService,
   ) {}
 
   @Get('getoption/:type')

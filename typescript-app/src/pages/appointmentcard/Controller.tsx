@@ -22,6 +22,8 @@ const Controller = () => {
 
   const [appointment, appointmentModel, appointmentStatus] = useModel(path, defaultState, modelConfig, cardDataReducer);
 
+  console.log("appointmentStatuscard", appointmentStatus);
+
   const getappointmentById = useDataById({
     callbackFunction: appointmentModel.get,
     id: Number(id),
@@ -91,7 +93,8 @@ const Controller = () => {
   return (
     <Fragment>
       <SubHeader title={`Appointment Form | ${mode.toUpperCase()}`} buttons={navButtons} actions={{ btnBack: handleBack }} />
-      <AuthorizationAlert />
+      <AuthorizationAlert status={appointmentStatus} dependsOn={["read", "create", "update"]} />
+
       <AppointmentForm data={appointment.data} onChange={handleChange} onSubmit={handleSubmit} />
     </Fragment>
   );

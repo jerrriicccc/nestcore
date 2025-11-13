@@ -14,7 +14,6 @@ import {
 import { CustomersService } from './customer.service';
 import { CreateDto, UpdateDto } from './dto/customer.dto';
 import { Customer } from './entity/customers.entity';
-import { ValidateAccessService } from '../../component/validateaccess/ValidateAccessComponent';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -26,10 +25,7 @@ interface PaginationQuery {
 @UseGuards(AuthGuard)
 @Controller('customers')
 export class CustomersController {
-  constructor(
-    private readonly customersService: CustomersService,
-    private readonly validateAccessService: ValidateAccessService,
-  ) {}
+  constructor(private readonly customersService: CustomersService) {}
 
   @Get('getoption/verifystatuses')
   async getVerifyStatuses(): Promise<{
@@ -44,7 +40,6 @@ export class CustomersController {
 
   @Get('index')
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
-    // this.validateAccessService.check((req as any).user, [1]);
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 

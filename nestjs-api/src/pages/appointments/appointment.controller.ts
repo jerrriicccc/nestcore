@@ -25,7 +25,7 @@ import {
   hasDeleteAccess,
   hasReadAccess,
   hasUpdateAccess,
-} from 'src/component/validateaccess/RbacToken';
+} from 'src/component/validateaccess/validate-rbactoken';
 import { ValidateAccessMethod } from 'src/component/validateaccess/validate-access.decorator';
 
 interface PaginationQuery {
@@ -68,7 +68,6 @@ export class AppointmentController {
 
   @Post('newcard')
   @ValidateAccessMethod({ RBACModule: 'appointments' })
-  @HttpCode(201)
   async create(@Body() createDto: CreateDto, @Req() req: Request) {
     if (!hasCreateAccess(req)) return denyRoleBasedAccess();
 
@@ -81,7 +80,6 @@ export class AppointmentController {
 
   @Put('updatecard')
   @ValidateAccessMethod({ RBACModule: 'appointments' })
-  @HttpCode(200)
   async update(@Body() updateDto: UpdateDto, @Req() req: Request) {
     if (!hasUpdateAccess(req)) return denyRoleBasedAccess();
     if (!updateDto.id) throw new BadRequestException('No id Found');
@@ -96,7 +94,6 @@ export class AppointmentController {
 
   @Delete('deletecard')
   @ValidateAccessMethod({ RBACModule: 'appointments' })
-  @HttpCode(200)
   async delete(@Body('id', ParseIntPipe) id: number, @Req() req: Request) {
     if (!hasDeleteAccess(req)) return denyRoleBasedAccess();
     if (!id) throw new BadRequestException('No id Found');
