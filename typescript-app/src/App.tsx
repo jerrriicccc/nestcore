@@ -7,17 +7,15 @@ import ProfileForm from "./pages/profile/ProfileForm";
 import { AuthProvider } from "./context/AuthContext";
 import { TitleProvider } from "./context/TitleContext";
 import LandingPage from "./pages/landingpage/Controller";
-import ServicesPage from "./pages/servicepage/Controller";
 import NotFound from "./pages/NotFound";
 
 // Login
 const Login = lazy(() => import("./pages/authentication/Login"));
 const GitHubCallback = lazy(() => import("./pages/authentication/GitHubCallback"));
 const Dashboard = lazy(() => import("./pages/dashboard/Controller"));
-const Signup = lazy(() => import("./pages/authentication/Signup"));
 const SessionExpired = lazy(() => import("./pages/SessionExpired"));
 
-// Mail Verification
+// Email Verification
 const VerifySuccess = lazy(() => import("./pages/mailverification/VerifySuccess"));
 const VerifyFailed = lazy(() => import("./pages/mailverification/VerifyFailed"));
 const ResetPassword = lazy(() => import("./pages/authentication/ResetPassword"));
@@ -30,23 +28,17 @@ const Profile = lazy(() => import("./pages/profile/Controller"));
 // Appointment
 const Appointment = lazy(() => import("./pages/appointmentlist/Controller"));
 const AppointmentCard = lazy(() => import("./pages/appointmentcard/Controller"));
+const ServiceSettingHome = lazy(() => import("./pages/servicesettinghome/Controller"));
+const AppointmentStatusCard = lazy(() => import("./pages/appointmentstatus/Controller"));
+const AppointmentWorkflowSettCard = lazy(() => import("./pages/appointmentworkflowsetting/Controller"));
+const AppointmentNumberCard = lazy(() => import("./pages/appointmentnumber/Controller"));
+const AppintmentSettingCard = lazy(() => import("./pages/appointmentsetting/Controller"));
 
 // Role
 const RoleList = lazy(() => import("./pages/rolelist/Controller"));
 const RoleCard = lazy(() => import("./pages/rolecard/Controller"));
 const RoleAccessList = lazy(() => import("./pages/roleaccesslist/Controller"));
 const RoleAccessCard = lazy(() => import("./pages/roleaccesscard/Controller"));
-
-// Services
-const ServiceSettingHome = lazy(() => import("./pages/servicesettinghome/Controller"));
-const StatusCard = lazy(() => import("./pages/statuses/Controller"));
-const WorkflowSettCard = lazy(() => import("./pages/workflowsettings/Controller"));
-
-// Appointment Number
-const AppointmentNumber = lazy(() => import("./pages/appointmentnumber/Controller"));
-
-// Module
-const ModuleCard = lazy(() => import("./pages/appointmentsettings/Controller"));
 
 // Router config
 const router = createBrowserRouter([
@@ -178,18 +170,18 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/statuses/:mode",
+        path: "/appointmentstatus/:mode",
         element: (
           <ProtectedRoute>
-            <SuspenseExt body={<StatusCard />} />
+            <SuspenseExt body={<AppointmentStatusCard />} />
           </ProtectedRoute>
         ),
       },
       {
-        path: "/workflowsettings/:mode",
+        path: "/appointmentworkflowsetting/:mode",
         element: (
           <ProtectedRoute>
-            <SuspenseExt body={<WorkflowSettCard />} />
+            <SuspenseExt body={<AppointmentWorkflowSettCard />} />
           </ProtectedRoute>
         ),
       },
@@ -197,7 +189,7 @@ const router = createBrowserRouter([
         path: "/appointmentnumber/:mode",
         element: (
           <ProtectedRoute>
-            <SuspenseExt body={<AppointmentNumber />} />
+            <SuspenseExt body={<AppointmentNumberCard />} />
           </ProtectedRoute>
         ),
       },
@@ -205,7 +197,7 @@ const router = createBrowserRouter([
         path: "/appointmentsettings/:mode",
         element: (
           <ProtectedRoute>
-            <SuspenseExt body={<ModuleCard />} />
+            <SuspenseExt body={<AppintmentSettingCard />} />
           </ProtectedRoute>
         ),
       },
@@ -250,14 +242,6 @@ const router = createBrowserRouter([
     element: (
       <AuthProvider>
         <SuspenseExt body={<SessionExpired />} />
-      </AuthProvider>
-    ),
-  },
-  {
-    path: "/services",
-    element: (
-      <AuthProvider>
-        <SuspenseExt body={<ServicesPage />} />
       </AuthProvider>
     ),
   },

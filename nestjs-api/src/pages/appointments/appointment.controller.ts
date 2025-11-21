@@ -10,14 +10,13 @@ import {
   ParseIntPipe,
   Req,
   UseGuards,
-  HttpCode,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { CreateDto, UpdateDto } from './dto/appointments.dto';
 import { AppointmentEntity } from './entity/appointment.entity';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
-import { AuthService } from '../auth/auth.service';
 import { getTodayFormatted } from 'src/utils/date.util';
 import {
   denyRoleBasedAccess,
@@ -26,7 +25,11 @@ import {
   hasReadAccess,
   hasUpdateAccess,
 } from 'src/component/validateaccess/validate-rbactoken';
-import { ValidateAccessMethod } from 'src/component/validateaccess/validate-access.decorator';
+import {
+  ValidateAccessMethod,
+  isGranted,
+  getValidationError,
+} from 'src/component/validateaccess/validate-access.decorator';
 
 interface PaginationQuery {
   page?: number;
@@ -35,15 +38,14 @@ interface PaginationQuery {
 @UseGuards(AuthGuard)
 @Controller('appointments')
 export class AppointmentController {
-  constructor(
-    private readonly appointmentService: AppointmentService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly appointmentService: AppointmentService) {}
 
   @Get('index')
-  @HttpCode(200)
   @ValidateAccessMethod({ RBACModule: 'appointments' })
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
     if (!hasReadAccess(req)) return denyRoleBasedAccess();
 
     const page = Number(query.page) || 1;
@@ -59,6 +61,9 @@ export class AppointmentController {
   @Get('getcard')
   @ValidateAccessMethod({ RBACModule: 'appointments' })
   async findOne(@Query('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
     if (!hasReadAccess(req)) return denyRoleBasedAccess();
     if (!id) throw new BadRequestException('No id Found');
 
@@ -69,6 +74,9 @@ export class AppointmentController {
   @Post('newcard')
   @ValidateAccessMethod({ RBACModule: 'appointments' })
   async create(@Body() createDto: CreateDto, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
     if (!hasCreateAccess(req)) return denyRoleBasedAccess();
 
     const result = await this.appointmentService.create(
@@ -81,6 +89,9 @@ export class AppointmentController {
   @Put('updatecard')
   @ValidateAccessMethod({ RBACModule: 'appointments' })
   async update(@Body() updateDto: UpdateDto, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
     if (!hasUpdateAccess(req)) return denyRoleBasedAccess();
     if (!updateDto.id) throw new BadRequestException('No id Found');
 
@@ -95,6 +106,9 @@ export class AppointmentController {
   @Delete('deletecard')
   @ValidateAccessMethod({ RBACModule: 'appointments' })
   async delete(@Body('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
     if (!hasDeleteAccess(req)) return denyRoleBasedAccess();
     if (!id) throw new BadRequestException('No id Found');
 

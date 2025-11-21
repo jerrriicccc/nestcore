@@ -11,10 +11,11 @@ import {
   Req,
   UseGuards,
   ForbiddenException,
+  Param,
 } from '@nestjs/common';
-import { AppointmentNumberService } from './appointmentnumber.service';
-import { CreateDto, UpdateDto } from './dto/appointmentnumber.dto';
-import { AppointmentNumberEntity } from './entity/appointmentnumber.entity';
+import { AppointmentWorkflowSettingService } from './appointmentworkflowsetting.service';
+import { CreateDto, UpdateDto } from './dto/appointmentworkflowsetting.dto';
+import { AppointmentWorkflowSettingEntity } from './entity/appointmentworkflowsetting.entity';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
 import {
@@ -36,14 +37,31 @@ interface PaginationQuery {
 }
 
 @UseGuards(AuthGuard)
-@Controller('appointmentnumbers')
-export class AppointmentNumberController {
+@Controller('appointmentworkflowsettings')
+export class AppointmentWorkflowSettingController {
   constructor(
-    private readonly appointmentNumberService: AppointmentNumberService,
+    private readonly appointmentWorkflowSettingService: AppointmentWorkflowSettingService,
+    private readonly appointmentStatusService: AppointmentWorkflowSettingService,
   ) {}
 
+  @Get('getoption/:status')
+  async getOptionsByStatus(
+    @Param('status') status: string,
+  ): Promise<{ data: { value: string; label: string }[] }> {
+    const optionsMap: Record<
+      string,
+      () => Promise<{ value: string; label: string }[]>
+    > = {
+      appointmentstatus: () =>
+        this.appointmentStatusService.getAppointmentStatusOptions(),
+    };
+    const getOptionsFn = optionsMap[status];
+    const data = await getOptionsFn();
+    return { data };
+  }
+
   @Get('index')
-  @ValidateAccessMethod({ RBACModule: 'appointmentnumbers' })
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
     if (!isGranted(req)) {
       throw new ForbiddenException(getValidationError(req) || 'Access denied');
@@ -53,14 +71,15 @@ export class AppointmentNumberController {
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 
-    return await this.appointmentNumberService.getMainIndexTable(
-      AppointmentNumberEntity,
+    return await this.appointmentWorkflowSettingService.getMainIndexTable(
+      AppointmentWorkflowSettingEntity,
       page,
       searchCond,
     );
   }
 
   @Get('getcard')
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
   async findOne(@Query('id', ParseIntPipe) id: number, @Req() req: Request) {
     if (!isGranted(req)) {
       throw new ForbiddenException(getValidationError(req) || 'Access denied');
@@ -71,28 +90,30 @@ export class AppointmentNumberController {
       throw new BadRequestException('ID is required');
     }
 
-    const result = await this.appointmentNumberService.findOne(
-      AppointmentNumberEntity,
+    const result = await this.appointmentWorkflowSettingService.findOne(
+      AppointmentWorkflowSettingEntity,
       id,
     );
     return { data: result };
   }
 
   @Post('newcard')
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
   async create(@Body() createDto: CreateDto, @Req() req: Request) {
     if (!isGranted(req)) {
       throw new ForbiddenException(getValidationError(req) || 'Access denied');
     }
     if (!hasCreateAccess(req)) return denyRoleBasedAccess();
 
-    const result = await this.appointmentNumberService.create(
-      AppointmentNumberEntity,
-      { ...createDto, nextid: createDto.startseries },
+    const result = await this.appointmentWorkflowSettingService.create(
+      AppointmentWorkflowSettingEntity,
+      createDto,
     );
     return { data: result };
   }
 
   @Put('updatecard')
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
   async update(@Body() updateDto: UpdateDto, @Req() req: Request) {
     if (!isGranted(req)) {
       throw new ForbiddenException(getValidationError(req) || 'Access denied');
@@ -102,8 +123,8 @@ export class AppointmentNumberController {
     if (!updateDto.id) {
       throw new BadRequestException('ID is required for updating');
     }
-    const result = await this.appointmentNumberService.update(
-      AppointmentNumberEntity,
+    const result = await this.appointmentWorkflowSettingService.update(
+      AppointmentWorkflowSettingEntity,
       updateDto.id,
       updateDto,
     );
@@ -111,6 +132,7 @@ export class AppointmentNumberController {
   }
 
   @Delete('deletecard')
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
   async delete(@Body('id', ParseIntPipe) id: number, @Req() req: Request) {
     if (!isGranted(req)) {
       throw new ForbiddenException(getValidationError(req) || 'Access denied');
@@ -121,8 +143,8 @@ export class AppointmentNumberController {
       throw new BadRequestException('ID is required in the request body');
     }
 
-    return await this.appointmentNumberService.delete(
-      AppointmentNumberEntity,
+    return await this.appointmentWorkflowSettingService.delete(
+      AppointmentWorkflowSettingEntity,
       id,
     );
   }

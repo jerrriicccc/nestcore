@@ -1,11 +1,11 @@
 import { Button } from "react-bootstrap";
-import { TextInput, SelectInput } from "../../components/form/InputForm";
+import { TextInput } from "../../components/form/InputForm";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-export interface ServiceData {
+export interface AppointmentStatusData {
   id?: number;
-  timeschedule: string;
+  status: string;
 }
 
 type InputType = {
@@ -14,18 +14,18 @@ type InputType = {
   inputType: "select-single" | "select-multi";
 };
 
-interface ServiceFormProps {
-  data: ServiceData;
+interface AppointmentStatusFormProps {
+  data: AppointmentStatusData;
   onChange: (e: React.ChangeEvent<HTMLInputElement> | InputType) => void;
   onSubmit: () => void;
   handleCancelEditForm: () => void;
 }
 
 const fieldLabels = {
-  timeschedule: "Time Schedule",
+  status: "Status",
 };
 
-const WorkflowSettingForm = ({ data = { timeschedule: "" }, onChange, onSubmit, handleCancelEditForm }: ServiceFormProps) => {
+const AppointmentStatusForm = ({ data = { status: "" }, onChange, onSubmit, handleCancelEditForm }: AppointmentStatusFormProps) => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { mode } = useParams();
 
@@ -65,13 +65,7 @@ const WorkflowSettingForm = ({ data = { timeschedule: "" }, onChange, onSubmit, 
   return (
     <tr>
       <td>
-        <SelectInput name="timeschedule" label="TIme Schedule" onChange={onChange} data={data.timeschedule} className="form-input input-field" error={errors.timeschedule} />
-      </td>
-      <td>
-        <TextInput name="timeschedule" label="TIme Schedule" onChange={onChange} data={data.timeschedule} className="form-input input-field" error={errors.timeschedule} />
-      </td>
-      <td>
-        <SelectInput name="timeschedule" label="TIme Schedule" onChange={onChange} data={data.timeschedule} className="form-input input-field" error={errors.timeschedule} />
+        <TextInput name="status" label="Status" onChange={onChange} data={data.status} className="form-input input-field" error={errors.status} />
       </td>
       <td style={{ verticalAlign: "middle" }}>
         <Button variant="success" className="btn-success btn-sm" type="button" onClick={handleSubmit}>
@@ -87,4 +81,4 @@ const WorkflowSettingForm = ({ data = { timeschedule: "" }, onChange, onSubmit, 
   );
 };
 
-export default WorkflowSettingForm;
+export default AppointmentStatusForm;

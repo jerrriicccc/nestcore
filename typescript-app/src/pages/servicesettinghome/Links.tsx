@@ -2,8 +2,7 @@ import { Col, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 const linkList = [
-  { link: "/workflowsettings/create", label: "Worklflow Settings" },
-  { link: "/appointmentsettings/create", label: "Appointment Settings" },
+  { link: "/appointmentsettings/create", label: "Module Settings" },
   { link: "/appointmentnumber/create", label: "Appointment Number" },
 ];
 

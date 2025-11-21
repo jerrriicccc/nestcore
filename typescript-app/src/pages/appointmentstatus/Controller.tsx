@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useState, useCallback } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { CircularProgress, Box } from "@mui/material";
 
 // COMPONENTS
-import AppointmentSettingTable from "./AppointmentSettingTable";
+import AppointmentStatusTable from "./AppointmentStatusTable";
 import SubHeader from "../../components/layout/SubHeader";
 import SearchPane from "../../components/SearchPane";
 import Pagination from "../../components/Pagination";
@@ -44,20 +44,20 @@ const Controller = () => {
   }, []);
 
   // MODEL
-  const [AppointmentSettingForm, AppointmentSettingFormModel] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
+  const [appointmentStatusForm, appointmentStatusFormModel] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
 
   const cardSubmitHandler = useCardFormSubmitHandler({
     validateFn: useLocalValidation,
     data: {
-      ...AppointmentSettingForm.data,
+      ...appointmentStatusForm.data,
       id: mode === "update" ? Number(id) : undefined,
     },
-    model: AppointmentSettingFormModel,
+    model: appointmentStatusFormModel,
     mode,
     options: {
       dispatchRequest: true,
       onSuccess: () => {
-        if (typeof fetchData === "function") fetchData();
+        // // if (typeof fetchData === "function") fetchData();
 
         const alertPayload = {
           severity: mode === "create" ? ("success" as const) : ("success" as const),
@@ -66,14 +66,14 @@ const Controller = () => {
           key: Date.now(),
         };
 
-        AppointmentSettingFormModel.dataDispatch({
+        appointmentStatusFormModel.dataDispatch({
           type: "updateField",
           response: { name: "mode", value: "create" },
         });
 
         setAlertMessage(alertPayload);
         emptyFormFields();
-        navigate("/appointmentsettings/create");
+        navigate("/appointmentstatus/create");
       },
     },
   });
@@ -82,19 +82,20 @@ const Controller = () => {
     const proceed = window.confirm("Are you sure you want to submit this form?");
     if (proceed) {
       await cardSubmitHandler();
+      await appointmentStatusTableModel.get();
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement> | InputType) => {
     if ("target" in e) {
       const { name, value } = e.target;
-      AppointmentSettingFormModel.dataDispatch({
+      appointmentStatusFormModel.dataDispatch({
         type: "updateField",
         response: { name, value },
       });
     } else {
       const { name, value, inputType } = e;
-      AppointmentSettingFormModel.dataDispatch({
+      appointmentStatusFormModel.dataDispatch({
         type: "updateField",
         response: { name, value, inputType: inputType as "select-single" | "select-multi" },
       });
@@ -102,7 +103,7 @@ const Controller = () => {
   };
 
   const emptyFormFields = () => {
-    AppointmentSettingFormModel.dataDispatch({
+    appointmentStatusFormModel.dataDispatch({
       type: "reset",
       response: defaultStateCard.data,
     });
@@ -110,44 +111,27 @@ const Controller = () => {
 
   const handleCancel = () => {
     emptyFormFields();
-    AppointmentSettingFormModel.dataDispatch({
+    appointmentStatusFormModel.dataDispatch({
       type: "updateField",
       response: { name: "mode", value: "create" },
     });
-    navigate("/appointmentsettings/create");
+    navigate("/appointmentstatus/create");
   };
 
   /** --------------------------------  TABLE DATA INITIALIZATION ------------------------------------  **/
 
   // ROUTER HOOKS
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // URL PARAMETERS
-  const page = Number(searchParams.get("page")) || 1;
-  const searchCond = searchParams.get("searchcond") || "";
-
-  // HANDLERS
-  const handleSearch = useCallback(
-    (searchTerm: string) => {
-      setSearchParams((prev) => {
-        prev.set("searchcond", searchTerm);
-        prev.set("page", "1");
-        return prev;
-      });
-    },
-    [setSearchParams]
-  );
 
   // MODEL
-  const [appointmentSettingTable, appointmentSettingTableModel, appointmentSettingTableStatus] = useModel(path, defaultState, modelConfig, listDataReducer);
-  const [fetchData] = useDataBySearchParams({ callbackFunction: appointmentSettingTableModel.get, searchParam: "searchcond" });
+  const [appointmentStatusTable, appointmentStatusTableModel, appointmentStatusTableStatus] = useModel(path, defaultState, modelConfig, listDataReducer);
+  // const [fetchData] = useDataBySearchParams({ callbackFunction: appointmentStatusTableModel.get, searchParam: "searchcond" });
 
   // STATE MANAGEMENT
   const [isLoading, setIsLoading] = useState(false);
 
   // DELETE HANDLER
   const sendDeleteRequest = useSimpleConfirmDelete({
-    delFn: appointmentSettingTableModel.delete,
+    delFn: appointmentStatusTableModel.delete,
     onSuccess: async () => {
       setAlertMessage(null);
       setTimeout(() => {
@@ -158,7 +142,7 @@ const Controller = () => {
         });
       }, 90);
 
-      await appointmentSettingTableModel.get();
+      await appointmentStatusTableModel.get();
     },
   });
 
@@ -170,16 +154,13 @@ const Controller = () => {
   };
 
   // DATA FETCHING IF ID IS PRESENT
-  const getServiceById = useDataById({ callbackFunction: AppointmentSettingFormModel.get, id: Number(id), options: { preventZeroValue: true, action: "read" } });
+  const getServiceById = useDataById({ callbackFunction: appointmentStatusFormModel.get, id: Number(id), options: { preventZeroValue: true, action: "read" } });
 
   // FETCH DATA ON PAGE/SEARCH CHANGE
   useInitializeData({
     functionName: () => {
-      if (typeof fetchData === "function") {
-        fetchData();
-      }
+      appointmentStatusTableModel.get();
     },
-    deps: [page, searchCond],
   });
 
   // INITIALIZE DATA
@@ -188,8 +169,8 @@ const Controller = () => {
     args: mode === "update" && id ? Number(id) : undefined,
     deps: [mode, id],
   });
-  useDataStatusListener({ statusState: appointmentSettingTableStatus, action: "read", status: "success", callbackFunction: () => setIsLoading(false) });
-  useRedirectOnErrorStatus({ path: "/", statusState: appointmentSettingTableStatus, action: "read", errorCode: 401 });
+  useDataStatusListener({ statusState: appointmentStatusTableStatus, action: "read", status: "success", callbackFunction: () => setIsLoading(false) });
+  useRedirectOnErrorStatus({ path: "/", statusState: appointmentStatusTableStatus, action: "read", errorCode: 401 });
 
   // DERIVED VALUES
   const tableActions: TableActions = {
@@ -202,9 +183,9 @@ const Controller = () => {
   };
   return (
     <Fragment>
-      <SubHeader title="Settings" searchPane={<SearchPane onSearch={handleSearch} />} buttons={navButtons} actions={{ btnBack: handleBack }} />
+      <SubHeader title="Status" buttons={navButtons} actions={{ btnBack: handleBack }} />
       {alertMessage && <AlertMessages {...alertMessage} alertKey={alertMessage.key} key={alertMessage.key} />}
-      <AuthorizationAlert />
+      <AuthorizationAlert status={appointmentStatusTableStatus} dependsOn={["read", "create", "update", "delete"]} />
 
       {/* TABLE */}
       <div className="px-4">
@@ -214,10 +195,10 @@ const Controller = () => {
           </Box>
         ) : (
           <>
-            <AppointmentSettingTable
-              data={appointmentSettingTable?.data || []}
+            <AppointmentStatusTable
+              data={appointmentStatusTable?.data || []}
               actions={tableActions}
-              formData={AppointmentSettingForm.data}
+              formData={appointmentStatusForm.data}
               onChange={handleChange}
               onSubmit={handleSubmit}
               handleCancelEditForm={handleCancel}
@@ -227,9 +208,9 @@ const Controller = () => {
       </div>
 
       {/* PAGINATION */}
-      {!isLoading && appointmentSettingTable.data.length > 0 && (
+      {!isLoading && appointmentStatusTable.data.length > 0 && (
         <div className="d-flex justify-content-center ">
-          <Pagination settings={appointmentSettingTable.meta} disabled={isLoading} />
+          <Pagination settings={appointmentStatusTable.meta} disabled={isLoading} />
         </div>
       )}
     </Fragment>

@@ -129,8 +129,7 @@ const Controller = () => {
         searchPane={<SearchPane onSearch={handleSearch} />}
       />
       {alertMessage && <AlertMessages {...alertMessage} />}
-
-      <AuthorizationAlert />
+      <AuthorizationAlert status={userStatus} dependsOn={["read", "update", "delete"]} />
       <div className="px-4">
         {isLoading ? (
           <Box display="flex" justifyContent="center" my={4}>

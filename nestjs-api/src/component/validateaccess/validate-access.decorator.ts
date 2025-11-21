@@ -6,9 +6,22 @@ import {
 } from './validate-rbactoken';
 
 /**
+ * Extended Request interface to include RBAC-related properties
+ */
+declare module 'express' {
+  interface Request {
+    isGranted?: boolean;
+    validationError?: string;
+    rbacAccess?: string[];
+    rbacPayload?: any;
+  }
+}
+
+/**
  * Method decorator that validates RBAC/access tokens before executing the
  * controller handler. The validated access data is cached on the request
  * object so that helper utilities (e.g. hasReadAccess) can re-use it.
+ * Sets an 'isGranted' flag on the request object that can be checked in controllers.
  */
 export function ValidateAccessMethod(
   options: ValidateUserAccessOptions = {},
@@ -34,7 +47,10 @@ export function ValidateAccessMethod(
       const validationResult = await validateUserAccess(request, options);
 
       if (!validationResult.ok) {
-        throw new UnauthorizedException(validationResult.message);
+        request.isGranted = false;
+        request.validationError = validationResult.message;
+        // Still call the method so controller can check isGranted() and handle appropriately
+        return originalMethod.apply(this, args);
       }
 
       const accessInfo = validationResult.payload?.access;
@@ -42,12 +58,31 @@ export function ValidateAccessMethod(
         ? accessInfo.access
         : [];
 
-      request['rbacAccess'] = permissions;
-      request['rbacPayload'] = validationResult.payload?.rbacPayload;
+      request.rbacAccess = permissions;
+      request.rbacPayload = validationResult.payload?.rbacPayload;
+      request.isGranted = true;
 
       return originalMethod.apply(this, args);
     };
 
     return descriptor;
   };
+}
+
+/**
+ * Check if access was granted by ValidateAccessMethod decorator
+ * @param request - Express request object
+ * @returns True if access was granted, false otherwise
+ */
+export function isGranted(request: Request): boolean {
+  return request.isGranted === true;
+}
+
+/**
+ * Get the validation error message if access was denied
+ * @param request - Express request object
+ * @returns Error message or undefined
+ */
+export function getValidationError(request: Request): string | undefined {
+  return request.validationError;
 }

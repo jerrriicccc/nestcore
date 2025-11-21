@@ -1,11 +1,14 @@
 import { Button } from "react-bootstrap";
-import { TextInput } from "../../components/form/InputForm";
+import { TextInput, SelectInput, MultiSelectInput } from "../../components/form/InputForm";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-export interface ServiceData {
+export interface WorkflowSettingData {
   id?: number;
-  status: string;
+  statusid: number;
+  ordernumber: string;
+  linkedstatuses: string[];
+  linkedfunction: string;
 }
 
 type InputType = {
@@ -14,18 +17,30 @@ type InputType = {
   inputType: "select-single" | "select-multi";
 };
 
-interface ServiceFormProps {
-  data: ServiceData;
+interface WorkflowSettingFormProps {
+  data: WorkflowSettingData;
   onChange: (e: React.ChangeEvent<HTMLInputElement> | InputType) => void;
   onSubmit: () => void;
   handleCancelEditForm: () => void;
+  selectOptions?: {
+    appointmentstat: any;
+  };
 }
 
 const fieldLabels = {
-  status: "Status",
+  // statusid: "Time Schedule",
+  // ordernumber: "Time Schedule",
+  // linkedstatuses: "Time Schedule",
+  // linkedfunction: "Time Schedule",
 };
 
-const StatusForm = ({ data = { status: "" }, onChange, onSubmit, handleCancelEditForm }: ServiceFormProps) => {
+const WorkflowSettingForm = ({
+  data = { statusid: 0, ordernumber: "", linkedstatuses: [], linkedfunction: "" },
+  onChange,
+  onSubmit,
+  handleCancelEditForm,
+  selectOptions,
+}: WorkflowSettingFormProps) => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { mode } = useParams();
 
@@ -65,7 +80,23 @@ const StatusForm = ({ data = { status: "" }, onChange, onSubmit, handleCancelEdi
   return (
     <tr>
       <td>
-        <TextInput name="status" label="Status" onChange={onChange} data={data.status} className="form-input input-field" error={errors.status} />
+        <SelectInput name="statusid" onChange={onChange} data={data.statusid} error={errors.statusid} options={selectOptions?.appointmentstat} />
+      </td>
+      <td>
+        <TextInput name="ordernumber" label="Order Number" onChange={onChange} data={data.ordernumber} error={errors.ordernumber} />
+      </td>
+      <td>
+        <MultiSelectInput
+          name="linkedstatuses"
+          onChange={(e: InputType) => onChange(e)}
+          selectProps={{ isMulti: true, placeholder: "" }}
+          data={data}
+          error={errors.linkedstatuses}
+          options={selectOptions?.appointmentstat}
+        />
+      </td>
+      <td>
+        <TextInput name="linkedfunction" label="Linked Function" onChange={onChange} data={data.linkedfunction} error={errors.linkedfunction} />
       </td>
       <td style={{ verticalAlign: "middle" }}>
         <Button variant="success" className="btn-success btn-sm" type="button" onClick={handleSubmit}>
@@ -81,4 +112,4 @@ const StatusForm = ({ data = { status: "" }, onChange, onSubmit, handleCancelEdi
   );
 };
 
-export default StatusForm;
+export default WorkflowSettingForm;

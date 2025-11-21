@@ -22,7 +22,7 @@ import { RoleEntity } from '../roles/entity/role.entity';
 
 @Injectable()
 export class UserService {
-  private readonly DEFAULT_PAGE_LIMIT = 1;
+  private readonly DEFAULT_PAGE_LIMIT = 10;
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -80,7 +80,6 @@ export class UserService {
   }
 
   async update(id: number, data: DeepPartial<UserEntity>) {
-    console.log('Updating user with data:', { id, data });
     const repo = this.getRepository(UserEntity);
     const existing = await repo.findOne({ where: { id } });
 
@@ -162,8 +161,6 @@ export class UserService {
           id: data.id,
           statusname: statusName,
           email: data.email,
-          // phonenumber: data.phonenumber,
-          // birthdate: birthdateText,
           defaultroleid: data.defaultroleid,
           defaultrolename: dfroleName,
           roleName: roleNames.join(', '),

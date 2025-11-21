@@ -9,12 +9,22 @@ import {
   Query,
   Param,
   Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateDto, UpdateDto } from './dto/user.dto';
 import { UserEntity } from './entity/user.entity';
 import { RolesService } from '../roles/role.service';
+import {
+  ValidateAccessMethod,
+  isGranted,
+  getValidationError,
+} from 'src/component/validateaccess/validate-access.decorator';
 import { Request } from 'express';
+import {
+  denyRoleBasedAccess,
+  hasReadAccess,
+} from 'src/component/validateaccess/validate-rbactoken';
 
 interface PaginationQuery {
   page?: number;
@@ -45,8 +55,13 @@ export class UserController {
   }
 
   @Get('index')
+  @ValidateAccessMethod({ RBACModule: 'users' })
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
     const page = Number(query.page) || 1;
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
     const searchCond = query.searchcond || '';
 
     return await this.userService.getMainIndexTable(
@@ -57,26 +72,47 @@ export class UserController {
   }
 
   @Get('getcard')
-  async findOne(@Query('id', ParseIntPipe) id: number) {
+  @ValidateAccessMethod({ RBACModule: 'users' })
+  async findOne(@Query('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
     const result = await this.userService.findOne(UserEntity, id);
     return { data: result };
   }
 
-  @Post('newcard')
-  async create(@Body() createDto: CreateDto) {
-    const result = await this.userService.create(createDto);
-    return { data: result };
-  }
+  // @Post('newcard')
+  // @ValidateAccessMethod({ RBACModule: 'users' })
+  // async create(@Body() createDto: CreateDto, @Req() req: Request) {
+  //   if (!isGranted(req)) {
+  //     throw new ForbiddenException(getValidationError(req) || 'Access denied');
+  //   }
+  //   if (!hasReadAccess(req)) return denyRoleBasedAccess();
+  //   const result = await this.userService.create(createDto);
+  //   return { data: result };
+  // }
 
   @Put('updatecard')
-  async update(@Body() updateDto: UpdateDto) {
+  @ValidateAccessMethod({ RBACModule: 'users' })
+  async update(@Body() updateDto: UpdateDto, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
     const result = await this.userService.update(updateDto.id, updateDto);
-    console.log('Update result:', result);
+
     return { data: result };
   }
 
   @Delete('deletecard')
-  async delete(@Body('id', ParseIntPipe) id: number) {
+  @ValidateAccessMethod({ RBACModule: 'users' })
+  async delete(@Body('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
+
     return await this.userService.delete(id);
   }
 }

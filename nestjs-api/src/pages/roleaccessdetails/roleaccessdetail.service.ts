@@ -20,7 +20,7 @@ import { RoleAccessTypeEntity } from 'src/pages/roleaccesstypes/entity/roleacces
 
 @Injectable()
 export class RoleAccessDetailsService {
-  private readonly DEFAULT_PAGE_LIMIT = 5;
+  private readonly DEFAULT_PAGE_LIMIT = 10;
 
   constructor(
     @InjectDataSource()
@@ -171,6 +171,10 @@ export class RoleAccessDetailsService {
       const repo = this.getRepository(entity);
       const queryBuilder = repo.createQueryBuilder('roleaccessdetails');
       this.buildSearchQuery(queryBuilder, searchCond);
+
+      queryBuilder
+        .orderBy('roleaccessdetails.typeid', 'ASC')
+        .addOrderBy('roleaccessdetails.name', 'ASC');
 
       const result = await paginate<RoleAccessDetailEntity>(queryBuilder, {
         page: Math.max(1, page),

@@ -1,19 +1,3 @@
-// import { IsString, IsNotEmpty } from 'class-validator';
-// import { PartialType } from '@nestjs/mapped-types';
-
-// export class BaseDto {
-//   @IsString()
-//   @IsNotEmpty()
-//   status: string;
-// }
-
-// export class CreateDto extends BaseDto {}
-
-// export class UpdateDto extends PartialType(BaseDto) {
-//   @IsNotEmpty()
-//   id: number;
-// }
-
 import { PartialType } from '@nestjs/mapped-types';
 import {
   IsRequiredString,
@@ -31,7 +15,7 @@ export class UpdateDto extends PartialType(BaseDto) {
   id: number;
 }
 
-export class AppointmentSettingResponseDto {
+export class AppointmentStatusResponseDto {
   id: number;
   status: string;
 }

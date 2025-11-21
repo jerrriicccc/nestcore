@@ -4,6 +4,7 @@ import { Button, Card, Form, Alert, Spinner } from "react-bootstrap";
 import { TextInput, PasswordInput, PhoneNumberInput, DateInput } from "../../components/form/Input";
 import { setToken, isAuthenticated, getToken } from "../../lib/token-service";
 import { APIURL } from "../../lib/constants";
+import LoadingOverlay from "../../components/LoadingOverlay";
 import { useAuth } from "../../context/AuthContext";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -125,12 +126,20 @@ const Login = () => {
       return;
     }
 
+    // Allow the browser to paint the loading overlay before proceeding with
+    // the network request. Fast responses or immediate navigation can cause
+    // the overlay not to appear because the component unmounts before paint.
+    await new Promise<void>((res) => requestAnimationFrame(() => res()));
+
     try {
       let response: Response;
       let data: ApiResponse;
 
       if (isLogin) {
         // LOGIN LOGIC
+        // If we are already showing the full-page loading overlay (Login state),
+        // return early to avoid double UI; the overlay will render below when
+        // `loading` is true. The fetch still runs normally.
         response = await fetch(`${APIURL}/auth/login`, {
           method: "POST",
           headers: {
@@ -231,6 +240,8 @@ const Login = () => {
     try {
       // If user is already logged in, this is an account linking flow
       if (isAuthenticated()) {
+        setLoading(true);
+        await new Promise<void>((res) => requestAnimationFrame(() => res()));
         // The backend /auth/github endpoint is protected by AuthGuard('jwt')
         // It will automatically pick up the user's token from the Authorization header
         window.location.assign(`${APIURL}/auth/github`);
@@ -284,6 +295,8 @@ const Login = () => {
       const url = data?.data?.access_uri || data?.data?.redirect_url || data?.access_uri || data?.redirect_url;
 
       if (url) {
+        setLoading(true);
+        await new Promise<void>((res) => requestAnimationFrame(() => res()));
         window.location.assign(url);
       } else {
         setFormError("Authorization URL not provided by server.");
@@ -292,6 +305,10 @@ const Login = () => {
       setFormError("GitHub OAuth is not available. Please use regular login.");
     }
   };
+
+  if (loading) {
+    return <LoadingOverlay title={isLogin ? "Logging in..." : "Please wait..."} />;
+  }
 
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>

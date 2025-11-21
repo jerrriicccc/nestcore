@@ -9,8 +9,8 @@ export class AppointmentEntity {
   // @Column({ type: 'varchar', length: 70, default: '' })
   // apnnumber: string;
 
-  @Column({ length: 70, default: '' })
-  createdby: string;
+  // @Column({ length: 70, default: '' })
+  // createdby: string;
 
   @Column({ length: 70, default: '' })
   lastname: string;

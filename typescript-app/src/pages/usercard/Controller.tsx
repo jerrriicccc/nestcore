@@ -20,7 +20,7 @@ const Controller = () => {
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
 
-  const [user, userModel] = useModel(path, defaultState, modelConfig, cardDataReducer);
+  const [user, userModel, userStatus] = useModel(path, defaultState, modelConfig, cardDataReducer);
   const [getRole, getRoleOptions] = useSelectOption(path, optionState, optionEndPoints.roles, simpleDataReducer);
 
   const getUserById = useDataById({
@@ -94,7 +94,7 @@ const Controller = () => {
   return (
     <Fragment>
       <SubHeader title={`User Form | ${mode.toUpperCase()}`} buttons={navButtons} />
-      <AuthorizationAlert />
+      <AuthorizationAlert status={userStatus} dependsOn={["read", "create", "update"]} />
       <UserForm data={user.data} onChange={handleChange} onSubmit={handleSubmit} selectOptions={{ roles: getRole.data }} />
     </Fragment>
   );

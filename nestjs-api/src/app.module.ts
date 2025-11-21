@@ -14,14 +14,15 @@ import { RoleAccessTypeEntity } from './pages/roleaccesstypes/entity/roleaccesst
 import { RoleAccessOptionEntity } from './pages/roleaccessoptions/entity/roleaccessoption.entity';
 import { RoleLineEntity } from './pages/rolelines/entity/roleline.entity';
 import { AppointmentEntity } from './pages/appointments/entity/appointment.entity';
-import { StatusEntity } from './pages/appointmentstatuses/entity/appointmentstatus.entity';
+import { AppointmentStatusEntity } from './pages/appointmentstatuses/entity/appointmentstatus.entity';
 import { AppointmentNumberEntity } from './pages/appointmentnumbers/entity/appointmentnumber.entity';
-import { AppointmentSettingEntity } from './pages/appointmentsetting/entity/appointmentsetting.entity';
+import { AppointmentSettingEntity } from './pages/appointmentsettings/entity/appointmentsetting.entity';
+import { AppointmentWorkflowSettingEntity } from './pages/appointmentworkflowsettings/entity/appointmentworkflowsetting.entity';
 
 // MODULES
 import { UserModule } from './pages/users/user.module';
 import { AuthModule } from './pages/auth/auth.module';
-import { MailModule } from './pages/mail/mail.module';
+import { MailModule } from './pages/email/mail.module';
 import { RolesModule } from './pages/roles/role.module';
 import { UserStatusesModule } from './pages/userstatuses/userstatuses.module';
 import { RoleAccessDetailsModule } from './pages/roleaccessdetails/roleaccessdetail.module';
@@ -29,9 +30,10 @@ import { RoleAccessTypesModule } from './pages/roleaccesstypes/roleaccesstype.mo
 import { RoleAccessOptionsModule } from './pages/roleaccessoptions/roleaccessoption.module';
 import { RoleLinesModule } from './pages/rolelines/roleline.module';
 import { AppointmentModule } from './pages/appointments/appointment.module';
-import { StatusModule } from './pages/appointmentstatuses/appointmentstatus.module';
+import { AppointmentStatusModule } from './pages/appointmentstatuses/appointmentstatus.module';
 import { AppointmentNumberModule } from './pages/appointmentnumbers/appointmentnumber.module';
-import { AppointmentSettingModule } from './pages/appointmentsetting/appointmentsetting.module';
+import { AppointmentSettingModule } from './pages/appointmentsettings/appointmentsetting.module';
+import { AppointmentWorkflowSettingModule } from './pages/appointmentworkflowsettings/appointmentworkflowsetting.module';
 
 @Module({
   imports: [
@@ -55,9 +57,10 @@ import { AppointmentSettingModule } from './pages/appointmentsetting/appointment
           RoleAccessOptionEntity,
           RoleLineEntity,
           AppointmentEntity,
-          StatusEntity,
+          AppointmentStatusEntity,
           AppointmentNumberEntity,
           AppointmentSettingEntity,
+          AppointmentWorkflowSettingEntity,
         ],
         synchronize: configService.get<boolean>('DB_SYNC', false),
         logging: configService.get<boolean>('DB_LOGGING', false),
@@ -79,9 +82,10 @@ import { AppointmentSettingModule } from './pages/appointmentsetting/appointment
     RoleAccessOptionsModule,
     RoleLinesModule,
     AppointmentModule,
-    StatusModule,
+    AppointmentStatusModule,
     AppointmentNumberModule,
     AppointmentSettingModule,
+    AppointmentWorkflowSettingModule,
   ],
 })
 export class AppModule implements NestModule {

@@ -115,7 +115,7 @@ const Controller = () => {
     <Fragment>
       <SubHeader title="Role Access List" buttons={navButton} />
       {alertMessage && <AlertMessages {...alertMessage} />}
-      <AuthorizationAlert />
+      <AuthorizationAlert status={roleAccessStatus} dependsOn={["read", "create", "update", "delete"]} />
 
       {/* TABLE */}
       <div className="px-4">

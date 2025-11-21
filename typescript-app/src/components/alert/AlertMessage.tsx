@@ -38,7 +38,7 @@ export const AlertMessages = ({ severity, title, message, alertKey }: AlertMessa
 
   useEffect(() => {
     if (open) {
-      const timer = setTimeout(() => setOpen(false), 1000);
+      const timer = setTimeout(() => setOpen(false), 3500);
       return () => clearTimeout(timer);
     }
   }, [open]);

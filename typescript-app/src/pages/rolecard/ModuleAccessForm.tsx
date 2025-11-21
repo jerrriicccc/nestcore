@@ -1,8 +1,12 @@
 import React from "react";
 import { Card } from "react-bootstrap";
-import { moduleTable } from "./PageSettings";
-import RegularTable from "../../components/table/RegularTable";
 import { MultiSelectInput } from "../../components/form/InputForm";
+import RegularTable from "../../components/table/RegularTable";
+import { moduleTable } from "./PageSettings";
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface OptionType {
   value: string | number;
@@ -23,13 +27,15 @@ type InputType = {
   inputType: "select-single" | "select-multi";
 };
 
+interface DataRow {
+  id?: number;
+  accesskey: string;
+  accessvalue?: string[];
+  availableOptions?: string[];
+}
+
 interface ModuleAccessFormProps {
-  data: {
-    id?: number;
-    accesskey: string;
-    accessvalue?: string[];
-    availableOptions?: string[];
-  }[];
+  data?: DataRow[];
   actions?: {
     onChange: (object: any) => void;
     onMenuOpen: (accesskey: string) => void;
@@ -39,38 +45,82 @@ interface ModuleAccessFormProps {
   };
 }
 
+// ============================================================================
+// Constants
+// ============================================================================
+
+const TABLE_PROPS = {
+  striped: "striped",
+  hover: "hover",
+  className: "table-th",
+  size: "sm",
+  responsive: true,
+} as const;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+//  * Retrieves options for a given access key from selectOptions
+//  * Uses case-insensitive key matching
+//  */
+const getOptionsForAccessKey = (selectOptions: ModuleAccessFormProps["selectOptions"], accessKey: string): OptionType[] => {
+  if (!selectOptions || typeof selectOptions !== "object") {
+    return [];
+  }
+
+  const lowerKey = accessKey.toLowerCase();
+  return selectOptions[lowerKey] || [];
+};
+
+/**
+ * Processes raw options to ensure consistent structure
+ * Maintains original value and label properties
+ */
+const processOptions = (options: any[]): OptionType[] => {
+  if (!Array.isArray(options)) return [];
+
+  return options.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
+};
+
+/**
+ * Finds matching options from processed options based on access values
+ * Uses case-insensitive matching for values
+ */
+const findMatchingValues = (accessValues: string[] | undefined, processedOptions: OptionType[]): OptionType[] => {
+  if (!Array.isArray(accessValues)) return [];
+
+  return accessValues
+    .map((value) => {
+      return processedOptions.find((opt) => String(opt.value).toLowerCase() === String(value).toLowerCase());
+    })
+    .filter(Boolean) as OptionType[];
+};
+
+// ============================================================================
+// Component
+// ============================================================================
+
 const ModuleAccessForm = ({ data = [], selectOptions, actions, ...restProps }: ModuleAccessFormProps) => {
-  const tableProps = {
-    striped: "striped",
-    hover: "hover",
-    className: "table-th",
-    size: "sm",
-    responsive: true,
-  };
   const { onMenuOpen = () => {}, onChange = () => {} } = actions || {};
 
-  // Helper Functions
-  const prepareValueMultiSelect = (row: ModuleAccessFormProps["data"][0], selectOptions: ModuleAccessFormProps["selectOptions"], index: number) => {
-    const options = selectOptions && typeof selectOptions === "object" && row.accesskey.toLowerCase() in selectOptions ? selectOptions[row.accesskey.toLowerCase()] : [];
-    const processedOptions = Array.isArray(options)
-      ? options.map((option) => ({
-          value: option.value, // Keep original value
-          label: option.label, // Keep original label
-        }))
-      : [];
+  // --------------------------------------------------------------------------
+  // Multi-Select Input Renderer
+  // --------------------------------------------------------------------------
 
-    // Use accessvalue for current selections (this contains the selected values)
-    const currentValues = Array.isArray(row.accessvalue)
-      ? row.accessvalue
-          .map((value) => {
-            const matchingOption = processedOptions.find((opt) => String(opt.value).toLowerCase() === String(value).toLowerCase());
-            if (matchingOption) {
-              return matchingOption;
-            }
-          })
-          .filter(Boolean) // Remove undefined values
-      : [];
+  const prepareValueMultiSelect = (row: DataRow, selectOptions: ModuleAccessFormProps["selectOptions"], index: number) => {
+    // Get and process options for this access key
+    const rawOptions = getOptionsForAccessKey(selectOptions, row.accesskey);
+    const processedOptions = processOptions(rawOptions);
 
+    // Find currently selected values
+    const currentValues = findMatchingValues(row.accessvalue, processedOptions);
+
+    // Handle value changes
     const handleChange = (e: InputType) => {
       onChange({
         type: "updatefield",
@@ -79,6 +129,7 @@ const ModuleAccessForm = ({ data = [], selectOptions, actions, ...restProps }: M
         value: e.value,
       });
     };
+
     return (
       <MultiSelectInput
         name="accessvalue"
@@ -99,16 +150,25 @@ const ModuleAccessForm = ({ data = [], selectOptions, actions, ...restProps }: M
     );
   };
 
+  // --------------------------------------------------------------------------
+  // Data Transformation
+  // --------------------------------------------------------------------------
+
   const tableData = data.map((row, index) => ({
     ...row,
     accessvalueinput: prepareValueMultiSelect(row, selectOptions, index),
   }));
+
+  // --------------------------------------------------------------------------
+  // Render
+  // --------------------------------------------------------------------------
+
   return (
     <Card className="card shadow-sm p-4 mx-4">
       <div className="p-3">
         <h4>Module Access</h4>
       </div>
-      <RegularTable settings={moduleTable} data={tableData} tableProps={tableProps} recordActions={{}} />
+      <RegularTable settings={moduleTable} data={tableData} tableProps={TABLE_PROPS} recordActions={{}} />
     </Card>
   );
 };

@@ -21,6 +21,7 @@ export class RoleAccessDetailEntity {
   @Column({ type: 'int' })
   typeid: number;
 
+  @Index()
   @Column()
   accesskey: string;
 

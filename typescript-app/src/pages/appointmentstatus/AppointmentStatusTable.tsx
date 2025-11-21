@@ -1,8 +1,8 @@
 import FormTable from "../../components/table/FormTable";
-import StatusForm from "./StatusForm"; // Import the form
+import AppointmentStatusForm from "./AppointmentStatusForm"; // Import the form
 import { listTable } from "./PageSettings";
 
-interface ServiceTableProps {
+interface AppointmentStatusTableProps {
   data: any[];
   actions: {
     delete: (id: number) => void;
@@ -14,7 +14,7 @@ interface ServiceTableProps {
   handleCancelEditForm?: () => void; // Added prop
 }
 
-const StatusTable = ({ data, actions, formData, onChange, onSubmit, handleCancelEditForm }: ServiceTableProps) => {
+const AppointmentStatusTable = ({ data, actions, formData, onChange, onSubmit, handleCancelEditForm }: AppointmentStatusTableProps) => {
   const tableProps = { striped: true, hover: "hover", className: "table-th", size: "sm" };
 
   const recordActions = {
@@ -29,10 +29,12 @@ const StatusTable = ({ data, actions, formData, onChange, onSubmit, handleCancel
       recordActions={recordActions}
       tableProps={tableProps}
       formRow={
-        formData && onChange && onSubmit && handleCancelEditForm ? () => <StatusForm data={formData} onChange={onChange} onSubmit={onSubmit} handleCancelEditForm={handleCancelEditForm} /> : undefined
+        formData && onChange && onSubmit && handleCancelEditForm
+          ? () => <AppointmentStatusForm data={formData} onChange={onChange} onSubmit={onSubmit} handleCancelEditForm={handleCancelEditForm} />
+          : undefined
       }
     />
   );
 };
 
-export default StatusTable;
+export default AppointmentStatusTable;

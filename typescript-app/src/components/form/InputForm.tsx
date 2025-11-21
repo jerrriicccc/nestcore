@@ -50,7 +50,7 @@ type InputType = {
 
 type SelectInputProps = {
   name: string;
-  label: string;
+  label?: string;
   form?: string;
   data: any;
   onChange: (input: InputType) => void;

@@ -11,11 +11,19 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { StatusService } from './appointmentstatus.service';
+import { AppointmentStatusService } from './appointmentstatus.service';
 import { CreateDto, UpdateDto } from './dto/appointmentstatus.dto';
-import { StatusEntity } from './entity/appointmentstatus.entity';
+import { AppointmentStatusEntity } from './entity/appointmentstatus.entity';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
+import { ValidateAccessMethod } from 'src/component/validateaccess/validate-access.decorator';
+import {
+  denyRoleBasedAccess,
+  hasCreateAccess,
+  hasDeleteAccess,
+  hasReadAccess,
+  hasUpdateAccess,
+} from 'src/component/validateaccess/validate-rbactoken';
 
 interface PaginationQuery {
   page?: number;
@@ -23,45 +31,64 @@ interface PaginationQuery {
 }
 
 @UseGuards(AuthGuard)
-@Controller('statuses')
-export class StatusesController {
-  constructor(private readonly statusService: StatusService) {}
+@Controller('appointmentstatuses')
+export class AppointmentStatusesController {
+  constructor(
+    private readonly appointmentStatusService: AppointmentStatusService,
+  ) {}
 
   @Get('index')
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
+
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 
-    return await this.statusService.getMainIndexTable(
-      StatusEntity,
+    return await this.appointmentStatusService.getMainIndexTable(
+      AppointmentStatusEntity,
       page,
       searchCond,
     );
   }
 
   @Get('getcard')
-  async findOne(@Query('id', ParseIntPipe) id: number) {
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
+  async findOne(@Query('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
+
     if (!id) {
       throw new BadRequestException('ID is required');
     }
 
-    const result = await this.statusService.findOne(StatusEntity, id);
+    const result = await this.appointmentStatusService.findOne(
+      AppointmentStatusEntity,
+      id,
+    );
     return { data: result };
   }
 
   @Post('newcard')
-  async create(@Body() createDto: CreateDto) {
-    const result = await this.statusService.create(StatusEntity, createDto);
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
+  async create(@Body() createDto: CreateDto, @Req() req: Request) {
+    if (!hasCreateAccess(req)) return denyRoleBasedAccess();
+
+    const result = await this.appointmentStatusService.create(
+      AppointmentStatusEntity,
+      createDto,
+    );
     return { data: result };
   }
 
   @Put('updatecard')
-  async update(@Body() updateDto: UpdateDto) {
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
+  async update(@Body() updateDto: UpdateDto, @Req() req: Request) {
+    if (!hasUpdateAccess(req)) return denyRoleBasedAccess();
     if (!updateDto.id) {
       throw new BadRequestException('ID is required for updating');
     }
-    const result = await this.statusService.update(
-      StatusEntity,
+    const result = await this.appointmentStatusService.update(
+      AppointmentStatusEntity,
       updateDto.id,
       updateDto,
     );
@@ -69,11 +96,16 @@ export class StatusesController {
   }
 
   @Delete('deletecard')
-  async delete(@Body('id', ParseIntPipe) id: number) {
+  @ValidateAccessMethod({ RBACModule: 'appointmentworkflowsettings' })
+  async delete(@Body('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!hasDeleteAccess(req)) return denyRoleBasedAccess();
     if (!id) {
       throw new BadRequestException('ID is required in the request body');
     }
 
-    return await this.statusService.delete(StatusEntity, id);
+    return await this.appointmentStatusService.delete(
+      AppointmentStatusEntity,
+      id,
+    );
   }
 }

@@ -78,11 +78,7 @@ export class AppointmentService {
     if (!existing) {
       throw new NotFoundException(`Record with ID ${id} not found`);
     }
-
-    // Remove createdby from update data - it should not be updated by users
-    const { createdby, ...updateData } = data as any;
-
-    const updated = repo.merge(existing, updateData);
+    const updated = repo.merge(existing, data);
     return await repo.save(updated);
   }
 
@@ -100,74 +96,6 @@ export class AppointmentService {
 
     await repo.delete(id);
     return { message: `Record with ID ${id} deleted successfully` };
-  }
-
-  // async getMainIndexTable(
-  //   entity: EntityTarget<Appointment>,
-  //   extraWhere: Record<string, any> = {},
-  // ): Promise<AppointmentResponseDto[]> {
-  //   try {
-  //     const repo = this.getRepository(entity);
-  //     const queryBuilder = repo.createQueryBuilder('appointment');
-
-  //     for (const key in extraWhere) {
-  //       queryBuilder.andWhere(`appointment.${key} = :${key}`, {
-  //         [key]: extraWhere[key],
-  //       });
-  //     }
-
-  //     // Order by id instead of datecreated (which doesn't exist in the entity)
-  //     queryBuilder.orderBy('appointment.id', 'ASC');
-  //     const data = await queryBuilder.getMany();
-
-  //     // Transform data first
-  //     const transformedData = data.map((item) => ({
-  //       id: item.id,
-  //       createdby: item.createdby,
-  //       lastname: item.lastname,
-  //       firstname: item.firstname,
-  //     }));
-
-  //     // Use the existing resultData method to add pet names
-  //     return await this.resultData(transformedData);
-  //   } catch (error) {
-  //     console.error('Error in getMainIndexTable:', error);
-  //     throw new InternalServerErrorException(
-  //       `Failed to fetch appointments: ${error?.message || 'Unknown error'}`,
-  //     );
-  //   }
-  // }
-
-  async getNextAppointmentNumber(prefix: string): Promise<string> {
-    const result = await this.appointmentNumberRepository.findOne({
-      where: { prefix },
-    });
-
-    if (!result) {
-      throw new BadRequestException(
-        `No appointment number found for prefix ${prefix}`,
-      );
-    }
-
-    // Generate next appointment number
-    const nextNumber = `${result.prefix} ${result.nextid + 1}`;
-
-    // Update the nextid in DB
-    result.nextid += 1;
-    await this.appointmentNumberRepository.save(result);
-
-    return nextNumber;
-  }
-
-  private buildSearchQuery(queryBuilder: any, searchCond: string) {
-    queryBuilder;
-
-    if (searchCond) {
-      // queryBuilder.where(
-      //   '(user.email LIKE :search OR user.phonenumber LIKE :search OR DATE_FORMAT(user.birthdate, "%M %d, %Y") LIKE :search)',
-      //   { search: `%${searchCond}%` },
-      // );
-    }
   }
 
   private async resultData(data: any[]) {
@@ -188,6 +116,17 @@ export class AppointmentService {
       page: meta.currentPage,
       totalpages: Math.max(1, meta.totalPages || 1),
     };
+  }
+
+  private buildSearchQuery(queryBuilder: any, searchCond: string) {
+    queryBuilder;
+
+    if (searchCond) {
+      queryBuilder.where(
+        '(appointment.lastname LIKE :search OR appointment.firstname LIKE :search)',
+        { search: `%${searchCond}%` },
+      );
+    }
   }
 
   async getMainIndexTable(

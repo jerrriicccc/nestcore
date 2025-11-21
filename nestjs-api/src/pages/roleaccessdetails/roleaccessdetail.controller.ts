@@ -9,6 +9,8 @@ import {
   Query,
   ParseIntPipe,
   Param,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { RoleAccessDetailsService } from './roleaccessdetail.service';
 import { CreateDto, UpdateDto } from './dto/roleaccessdetail.dto';
@@ -20,6 +22,19 @@ import { RoleLineEntity } from '../rolelines/entity/roleline.entity';
 import { RoleLinesService } from 'src/pages/rolelines/roleline.service';
 import { RolesService } from '../roles/role.service';
 import { RoleEntity } from '../roles/entity/role.entity';
+import {
+  ValidateAccessMethod,
+  isGranted,
+  getValidationError,
+} from 'src/component/validateaccess/validate-access.decorator';
+import { Request } from 'express';
+import {
+  denyRoleBasedAccess,
+  hasCreateAccess,
+  hasDeleteAccess,
+  hasReadAccess,
+  hasUpdateAccess,
+} from 'src/component/validateaccess/validate-rbactoken';
 
 interface PaginationQuery {
   page?: number;
@@ -56,7 +71,13 @@ export class RoleAccessDetailsController {
   }
 
   @Get('index')
-  async findAll(@Query() query: PaginationQuery) {
+  @ValidateAccessMethod({ RBACModule: 'roleaccessdetails' })
+  async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
+
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond?.trim() || '';
 
@@ -68,7 +89,13 @@ export class RoleAccessDetailsController {
   }
 
   @Get('getcard')
-  async findOne(@Query('id', ParseIntPipe) id: number) {
+  @ValidateAccessMethod({ RBACModule: 'roleaccessdetails' })
+  async findOne(@Query('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
+
     const result = await this.roleAccessDetailsService.findOne(
       RoleAccessDetailEntity,
       id,
@@ -77,7 +104,13 @@ export class RoleAccessDetailsController {
   }
 
   @Post('newcard')
-  async create(@Body() createDto: CreateDto) {
+  @ValidateAccessMethod({ RBACModule: 'roleaccessdetails' })
+  async create(@Body() createDto: CreateDto, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasCreateAccess(req)) return denyRoleBasedAccess();
+
     const result = await this.roleAccessDetailsService.create(
       RoleAccessDetailEntity,
       createDto,
@@ -101,10 +134,14 @@ export class RoleAccessDetailsController {
   }
 
   @Put('updatecard')
-  async update(@Body() updateDto: UpdateDto) {
-    if (!updateDto.id) {
-      throw new BadRequestException('ID is required for updating');
+  @ValidateAccessMethod({ RBACModule: 'roleaccessdetails' })
+  async update(@Body() updateDto: UpdateDto, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
     }
+    if (!hasUpdateAccess(req)) return denyRoleBasedAccess();
+
+    if (!updateDto.id) throw new BadRequestException('No id Found');
     const result = await this.roleAccessDetailsService.update(
       RoleAccessDetailEntity,
       updateDto.id,
@@ -114,7 +151,12 @@ export class RoleAccessDetailsController {
   }
 
   @Delete('deletecard')
-  async delete(@Body('id', ParseIntPipe) id: number) {
+  @ValidateAccessMethod({ RBACModule: 'roleaccessdetails' })
+  async delete(@Body('id', ParseIntPipe) id: number, @Req() req: Request) {
+    if (!isGranted(req)) {
+      throw new ForbiddenException(getValidationError(req) || 'Access denied');
+    }
+    if (!hasDeleteAccess(req)) return denyRoleBasedAccess();
     return this.roleAccessDetailsService.delete(RoleAccessDetailEntity, id);
   }
 }

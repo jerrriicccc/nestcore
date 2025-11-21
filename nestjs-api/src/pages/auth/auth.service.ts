@@ -10,10 +10,9 @@ import { JwtService } from '@nestjs/jwt';
 import { UserEntity } from '../users/entity/user.entity';
 import { CreateDto } from '../users/dto/user.dto';
 import { randomUUID } from 'crypto';
-import { MailService } from '../mail/mail.service';
+import { MailService } from '../email/mail.service';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
 import { generateRBACToken } from 'src/component/validateaccess/validate-rbactoken';
 import * as crypto from 'crypto';
 import { RBAC_TREE } from 'src/lib/constants';
@@ -111,11 +110,9 @@ export class AuthService {
         throw new BadRequestException('Email is already registered');
       }
 
-      const hashedPassword = await argon2.hash(createDto.password);
-
       const user = this.userRepository.create({
         ...createDto,
-        password: hashedPassword,
+        password: createDto.password,
         verificationtoken: randomUUID(),
         statusid: 1,
         failedloginattempts: 0,
@@ -199,7 +196,6 @@ export class AuthService {
     try {
       isPasswordValid = await argon2.verify(user.password, password);
     } catch (e) {
-      // If stored password is not a valid argon2 hash (legacy/plain), treat as invalid
       isPasswordValid = false;
     }
     if (!isPasswordValid) {
@@ -246,15 +242,15 @@ export class AuthService {
     moduleName: string,
   ): Promise<string[]> {
     try {
-      if (!roleIds || roleIds.length === 0) {
-        console.log(`No roles provided for module ${moduleName}`);
-        return [];
-      }
+      // if (!roleIds || roleIds.length === 0) {
+      //   console.log(`No roles provided for module ${moduleName}`);
+      //   return [];
+      // }
 
       // Map module name to database accesskey format
       const accessKey = moduleName;
 
-      console.log(`Access key for module ${moduleName}: ${accessKey}`);
+      // console.log(`Access key for module ${moduleName}: ${accessKey}`);
 
       // Convert role IDs to numbers and filter out invalid ones
       const validRoleIds = roleIds
@@ -264,10 +260,10 @@ export class AuthService {
         })
         .filter((id): id is number => id !== null);
 
-      if (validRoleIds.length === 0) {
-        console.log(`No valid role IDs provided for module ${moduleName}`);
-        return [];
-      }
+      // if (validRoleIds.length === 0) {
+      //   console.log(`No valid role IDs provided for module ${moduleName}`);
+      //   return [];
+      // }
 
       // Query rolelines table for all roles and module
       const query = `
@@ -294,18 +290,18 @@ export class AuthService {
 
           if (Array.isArray(accessValue)) {
             allPermissions.push(...accessValue);
-            console.log(
-              `Role ${result.roleid} permissions for ${moduleName}:`,
-              accessValue,
-            );
+            // console.log(
+            //   `Role ${result.roleid} permissions for ${moduleName}:`,
+            //   accessValue,
+            // );
           }
         }
       }
 
-      console.log(
-        `All permissions for roles [${validRoleIds.join(', ')}] on module ${moduleName}:`,
-        allPermissions,
-      );
+      // console.log(
+      //   `All permissions for roles [${validRoleIds.join(', ')}] on module ${moduleName}:`,
+      //   allPermissions,
+      // );
 
       return allPermissions;
     } catch (error) {

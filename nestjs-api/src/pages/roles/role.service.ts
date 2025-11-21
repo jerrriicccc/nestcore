@@ -16,8 +16,7 @@ import { RoleEntity } from './entity/role.entity';
 import { paginate, IPaginationOptions } from 'nestjs-typeorm-paginate';
 import { RoleAccessDetailEntity } from '../roleaccessdetails/entity/roleaccessdetail.entity';
 import { RoleLineEntity } from '../rolelines/entity/roleline.entity';
-import { Customer } from '../customers/entity/customers.entity';
-
+import { AppointmentStatusEntity } from '../appointmentstatuses/entity/appointmentstatus.entity';
 @Injectable()
 export class RolesService {
   private readonly DEFAULT_PAGE_LIMIT = 5;
@@ -32,8 +31,11 @@ export class RolesService {
     @InjectRepository(RoleLineEntity)
     private readonly roleLineRepository: Repository<RoleLineEntity>,
 
-    @InjectRepository(Customer)
-    private readonly customerRepository: Repository<Customer>,
+    @InjectRepository(AppointmentStatusEntity)
+    private readonly appointmentStatusRepository: Repository<AppointmentStatusEntity>,
+
+    // @InjectRepository(Customer)
+    // private readonly customerRepository: Repository<Customer>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -46,11 +48,13 @@ export class RolesService {
     }
   }
 
-  async getCustomerOptions(): Promise<{ value: string; label: string }[]> {
-    const list = await this.customerRepository.find();
+  async getAppointmentStatusOptions(): Promise<
+    { value: string; label: string }[]
+  > {
+    const list = await this.appointmentStatusRepository.find();
     return list.map((data) => ({
       value: String(data.id),
-      label: data.lastname + ' ' + data.firstname,
+      label: data.status,
     }));
   }
 

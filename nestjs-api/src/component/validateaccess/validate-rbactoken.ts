@@ -2,6 +2,7 @@ import { Request } from 'express';
 import { UnauthorizedException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { DataSource } from 'typeorm';
+import { RBAC_TREE } from 'src/lib/constants';
 
 interface TokenValidationResponse {
   ok: boolean;
@@ -207,7 +208,14 @@ function getControllerFromRequest(request: Request): string {
     (segment) => !apiPrefixes.includes(segment.toLowerCase()),
   );
 
-  return filteredSegments[0] || '';
+  const controllerName = filteredSegments[0] || '';
+
+  // Map controller name to RBAC module using RBAC_TREE if available
+  if (controllerName && controllerName in RBAC_TREE) {
+    return RBAC_TREE[controllerName];
+  }
+
+  return controllerName;
 }
 
 /**
@@ -294,7 +302,7 @@ export async function validateUserAccess(
   // Check if RBAC token exists and has required parts
   if (!rbacToken || !rbacToken[0] || !rbacToken[1]) {
     response.code = 1;
-    response.message = 'Missing RBAC Token';
+    response.message = 'Missing RBAC Token or No Role Assigned';
     return response;
   }
 

@@ -3,7 +3,7 @@ import { TextInput, NumberInput } from "../../components/form/InputForm";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-export interface ServiceData {
+export interface AppointmentNumberData {
   id?: number;
   prefix: string;
   startseries: number;
@@ -15,8 +15,8 @@ type InputType = {
   inputType: "select-single" | "select-multi";
 };
 
-interface ServiceFormProps {
-  data: ServiceData;
+interface AppointmentNumberProps {
+  data: AppointmentNumberData;
   onChange: (e: React.ChangeEvent<HTMLInputElement> | InputType) => void;
   onSubmit: () => void;
   handleCancelEditForm: () => void;
@@ -27,7 +27,7 @@ const fieldLabels = {
   startseries: "Series",
 };
 
-const AppointmentNumberForm = ({ data = { prefix: "", startseries: 0 }, onChange, onSubmit, handleCancelEditForm }: ServiceFormProps) => {
+const AppointmentNumberForm = ({ data = { prefix: "", startseries: 0 }, onChange, onSubmit, handleCancelEditForm }: AppointmentNumberProps) => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const { mode } = useParams();
 
@@ -67,10 +67,10 @@ const AppointmentNumberForm = ({ data = { prefix: "", startseries: 0 }, onChange
   return (
     <tr>
       <td>
-        <TextInput name="prefix" label="Prefix" onChange={onChange} data={data.prefix} className="form-input input-field" error={errors.prefix} />
+        <TextInput name="prefix" label="Prefix" onChange={onChange} data={data.prefix} error={errors.prefix} />
       </td>
       <td>
-        <NumberInput name="startseries" label="Series" onChange={onChange} data={data.startseries} className="form-input input-field" error={errors.startseries} />
+        <NumberInput name="startseries" label="Series" onChange={onChange} data={data.startseries} error={errors.startseries} />
       </td>
       <td style={{ verticalAlign: "middle" }}>
         <Button variant="success" className="btn-success btn-sm" type="button" onClick={handleSubmit}>

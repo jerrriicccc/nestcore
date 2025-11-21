@@ -12,18 +12,18 @@ import {
   EntityTarget,
   DeepPartial,
 } from 'typeorm';
-import { StatusEntity } from './entity/appointmentstatus.entity';
+import { AppointmentStatusEntity } from './entity/appointmentstatus.entity';
 import { paginate } from 'nestjs-typeorm-paginate';
 
 @Injectable()
-export class StatusService {
+export class AppointmentStatusService {
   private readonly DEFAULT_PAGE_LIMIT = 15;
 
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(StatusEntity)
-    private readonly statusRepository: Repository<StatusEntity>,
+    @InjectRepository(AppointmentStatusEntity)
+    private readonly appointmentstatusRepository: Repository<AppointmentStatusEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -107,7 +107,7 @@ export class StatusService {
   }
 
   async getMainIndexTable(
-    entity: EntityTarget<StatusEntity>,
+    entity: EntityTarget<AppointmentStatusEntity>,
     page = 1,
     searchCond = '',
     limit = this.DEFAULT_PAGE_LIMIT,
@@ -124,7 +124,7 @@ export class StatusService {
       const repo = this.getRepository(entity);
       const queryBuilder = repo.createQueryBuilder('timeschedules');
 
-      const result = await paginate<StatusEntity>(queryBuilder, {
+      const result = await paginate<AppointmentStatusEntity>(queryBuilder, {
         page: Math.max(1, page),
         limit,
       });

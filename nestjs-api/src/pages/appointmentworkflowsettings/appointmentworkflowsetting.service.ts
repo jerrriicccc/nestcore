@@ -11,23 +11,23 @@ import {
   ObjectLiteral,
   EntityTarget,
   DeepPartial,
+  In,
 } from 'typeorm';
-import { Customer } from './entity/customers.entity';
-import { UserStatusEntity } from '../userstatuses/entity/userstatuses.entity';
+import { AppointmentWorkflowSettingEntity } from './entity/appointmentworkflowsetting.entity';
 import { paginate } from 'nestjs-typeorm-paginate';
-import { RoleAccessDetailEntity } from 'src/pages/roleaccessdetails/entity/roleaccessdetail.entity';
+import { AppointmentStatusEntity } from '../appointmentstatuses/entity/appointmentstatus.entity';
 
 @Injectable()
-export class CustomersService {
-  private readonly DEFAULT_PAGE_LIMIT = 5;
+export class AppointmentWorkflowSettingService {
+  private readonly DEFAULT_PAGE_LIMIT = 15;
 
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(Customer)
-    private readonly customerRepository: Repository<Customer>,
-    @InjectRepository(UserStatusEntity)
-    private readonly userStatusRepository: Repository<UserStatusEntity>,
+    @InjectRepository(AppointmentWorkflowSettingEntity)
+    private readonly appointmentNumberRepository: Repository<AppointmentWorkflowSettingEntity>,
+    @InjectRepository(AppointmentStatusEntity)
+    private readonly appointmentStatusRepository: Repository<AppointmentStatusEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -40,13 +40,13 @@ export class CustomersService {
     }
   }
 
-  async getVerifyStatusesOptions(): Promise<
+  async getAppointmentStatusOptions(): Promise<
     { value: string; label: string }[]
   > {
-    const list = await this.userStatusRepository.find();
-    return list.map((item) => ({
-      value: String(item.id),
-      label: item.status,
+    const data = await this.appointmentStatusRepository.find();
+    return data.map((data) => ({
+      value: data.id.toString(),
+      label: data.status,
     }));
   }
 
@@ -107,40 +107,57 @@ export class CustomersService {
     return { message: `Record with ID ${id} deleted successfully` };
   }
 
-  private buildSearchQuery(queryBuilder: any, searchCond: string) {
-    queryBuilder
-      .leftJoinAndSelect('customer.userStat', 'userStat')
-      .select([
-        'customer.id',
-        'customer.firstname',
-        'customer.lastname',
-        'customer.statusid',
-        'userStat.status as statusname',
-      ]);
-
-    if (searchCond) {
-      queryBuilder.where(
-        '(customer.firstname LIKE :search OR customer.lastname LIKE :search OR userStat.status LIKE :search)',
-        { search: `%${searchCond}%` },
+  async getMainIndexTable(
+    entity: EntityTarget<AppointmentStatusEntity>,
+    page = 1,
+    searchCond = '',
+    limit = this.DEFAULT_PAGE_LIMIT,
+  ): Promise<{
+    data: Array<{ [key: string]: any }>;
+    meta: {
+      datacount: number;
+      pagelimit: number;
+      page: number;
+      totalpages: number;
+    };
+  }> {
+    try {
+      const repo = this.getRepository(entity);
+      const queryBuilder = repo.createQueryBuilder(
+        'appointmentworkflowsettings',
       );
+
+      // for searching
+      // this.buildSearchQuery(queryBuilder, searchCond);
+
+      const result = await paginate<AppointmentStatusEntity>(queryBuilder, {
+        page: Math.max(1, page),
+        limit,
+      });
+
+      return {
+        data: await this.resultData(result.items),
+        meta: this.paginationMeta(result.meta),
+      };
+    } catch (error) {
+      console.error('Error in getMainIndexTable:', error);
+      throw new InternalServerErrorException('Failed to fetch paginated data');
     }
   }
 
-  private async getStatName(statusid: number): Promise<string> {
-    const repo = this.getRepository(UserStatusEntity);
-    const status = await repo.findOne({ where: { id: statusid } as any });
-    return status?.status || 'Unknown';
-  }
-
-  private async resultData(data: any[]) {
+  private async resultData(data: AppointmentStatusEntity[]) {
     const result = await Promise.all(
-      data.map(async (item: any) => {
-        const statusName = await this.getStatName(item.statusid);
+      data.map(async (data: any) => {
+        const statusName = await this.getStatusName(data.statusid);
+        const linkedStatName = await this.getLinkedStatusName(
+          data.linkedstatuses,
+        );
+
         return {
-          id: item.id,
-          lastname: item.lastname,
-          firstname: item.firstname,
-          statusname: statusName,
+          id: data.id,
+          ...data,
+          statusName: statusName,
+          LSNames: linkedStatName.join(', '),
         };
       }),
     );
@@ -156,38 +173,23 @@ export class CustomersService {
     };
   }
 
-  async getMainIndexTable(
-    entity: EntityTarget<Customer>,
-    page = 1,
-    searchCond = '',
-    limit = this.DEFAULT_PAGE_LIMIT,
-  ): Promise<{
-    data: Array<{ [key: string]: any }>;
-    meta: {
-      datacount: number;
-      pagelimit: number;
-      page: number;
-      totalpages: number;
-    };
-  }> {
-    try {
-      const repo = this.getRepository(entity);
-      const queryBuilder = repo.createQueryBuilder('customer');
+  private async getStatusName(statusid: number): Promise<string> {
+    const repo = this.getRepository(AppointmentStatusEntity);
+    const status = await repo.findOne({ where: { id: statusid } as any });
+    const result = status?.status || 'Unknown';
+    return result;
+  }
 
-      this.buildSearchQuery(queryBuilder, searchCond);
+  private async getLinkedStatusName(
+    linkedstatuses: string[],
+  ): Promise<string[]> {
+    const options = await this.appointmentStatusRepository.find({
+      where: { id: In(linkedstatuses.map((id) => parseInt(id))) },
+    });
+    const optionMap = new Map(
+      options.map((option) => [option.id, option.status]),
+    );
 
-      const result = await paginate<Customer>(queryBuilder, {
-        page: Math.max(1, page),
-        limit,
-      });
-
-      return {
-        data: await this.resultData(result.items),
-        meta: this.paginationMeta(result.meta),
-      };
-    } catch (error) {
-      console.error('Error in getMainIndexTable:', error);
-      throw new InternalServerErrorException('Failed to fetch paginated data');
-    }
+    return linkedstatuses.map((id) => optionMap.get(parseInt(id)) || 'Unknown');
   }
 }

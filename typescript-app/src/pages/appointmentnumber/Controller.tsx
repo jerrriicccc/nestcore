@@ -194,7 +194,7 @@ const Controller = () => {
     <Fragment>
       <SubHeader title="Appointment Number" searchPane={<SearchPane onSearch={handleSearch} />} buttons={navButtons} actions={{ btnBack: handleBack }} />
       {alertMessage && <AlertMessages {...alertMessage} alertKey={alertMessage.key} key={alertMessage.key} />}
-      <AuthorizationAlert />
+      <AuthorizationAlert status={appointmentNumberTableStatus} dependsOn={["read", "create", "update", "delete"]} />
 
       <div className="px-4">
         {isLoading ? (

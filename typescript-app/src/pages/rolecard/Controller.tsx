@@ -6,9 +6,9 @@ import RoleForm from "./RoleForm";
 import GlobalRecordAccessForm from "./GlobalRecordAccessForm";
 import ModuleAccessForm from "./ModuleAccessForm";
 import AuthorizationAlert from "../authorization/AuthorizationAlert";
-import { defaultState, navButtons, modelConfig, path, useLocalValidation, modelConfigGetAllOptions, defStatAccessDetails } from "./PageSettings";
+import { defaultState, navButtons, modelConfig, path, useLocalValidation } from "./PageSettings";
 import useModel from "../../lib/use-model";
-import { cardDataReducer, listDataReducer } from "../../lib/functions";
+import { cardDataReducer } from "../../lib/functions";
 import { useInitializeData, useDataById, useCardFormSubmitHandler, useUpdateField, useDataStatusListener } from "../../lib/use-datatool";
 import useGlobalRecordAccessModel from "../../models/use-globalrecordaccessmodel";
 import useRoleModel from "../../models/use-rolemodel";
@@ -22,15 +22,15 @@ interface UpdateObject {
   value: string | number | (string | number)[];
 }
 
-interface GlobalRecordAccessData {
-  id: number;
-  accesskey: string;
-  accessvalue: string[];
-  grantypeid: number;
-  roleid?: string;
-  typeid?: string;
-  parentkey?: string;
-}
+// interface GlobalRecordAccessData {
+//   id: number;
+//   accesskey: string;
+//   accessvalue: string[];
+//   grantypeid: number;
+//   roleid?: string;
+//   typeid?: string;
+//   parentkey?: string;
+// }
 
 interface UpdateData {
   id: number;
@@ -49,17 +49,19 @@ const Controller = () => {
   const [role, roleModel, roleStatus] = useModel(path, defaultState, modelConfig, cardDataReducer);
   const updateRoleField = useUpdateField({ callbackFunction: roleModel.setData });
   const { dataState: globalRecordAccess, dataStatus: globalRecAccessStatus, ...globalRAccessModel } = useGlobalRecordAccessModel();
-  // const [models, modelsModel] = useRoleModel();
+  const [models, modelsModel] = useRoleModel();
 
   const { dataState: moduleAccess, dataStatus: moduleAccessStatus, ...moduleAccessModel } = useModuleAccessModel();
   // const [moduleOptions, moduleOptionsModel] = useRoleModel();
 
   // getallaccessoption
-  const [getAllAccessOption, getAllAccessOptionModel, getAllAccessOptionStatus] = useModel(path, defStatAccessDetails, modelConfigGetAllOptions, listDataReducer);
+  // const [getAllAccessOption, getAllAccessOptionModel, getAllAccessOptionStatus] = useModel(path, defStatAccessDetails, modelConfigGetAllOptions, listDataReducer);
   // useInitializeData({
   //   functionName: getAllAccessOptionModel.get,
-  //   args: "getallaccessoptions",
+  //   args: { requestData: { model: "appointmentstatuses" } },
   // });
+
+  console.log("models", models);
 
   // Data Fetching Functions
   const getGlobalRAccess = () => {
@@ -89,24 +91,31 @@ const Controller = () => {
     }
   };
 
-  // const getModelValues = (model: string) => {
-  //   if (!(model in models.data)) {
-  //     modelsModel.get({
+  const getModelContents = () => {
+    if (globalRecordAccess.data.length > 0) {
+      globalRecordAccess.data.forEach((data: any) => {
+        getModelValues(data.accesskey);
+      });
+    }
+  };
+  const getModelValues = (model: string) => {
+    if (!(model in models.data)) {
+      modelsModel.get({
+        action: "read",
+        requestData: { model: model },
+        dispatchRequest: true,
+      });
+    }
+  };
+  // const getModelValuesModule = (model: string) => {
+  //   if (!(model in moduleAccess.data)) {
+  //     moduleAccessModel.get({
   //       action: "read",
   //       requestData: { model: model },
   //       dispatchRequest: true,
   //     });
   //   }
   // };
-  const getModelValuesModule = (model: string) => {
-    // if (!(model in moduleAccess.data)) {
-    //   moduleAccessModel.get({
-    //     action: "read",
-    //     requestData: { model: model },
-    //     dispatchRequest: true,
-    //   });
-    // }
-  };
   // const getModelContents = () => {
   //   if (globalRecordAccess?.data?.length > 0) {
   //     // Get unique accesskeys to avoid duplicate requests
@@ -230,17 +239,12 @@ const Controller = () => {
     functionName: getGlobalRAccess,
     args: mode === "update" && id ? Number(id) : undefined,
   });
+  useEffect(getModelContents, [globalRecordAccess.data]);
 
   useInitializeData({
     functionName: getModuleAccess,
     args: mode === "update" && id ? Number(id) : undefined,
   });
-
-  // useEffect(() => {
-  //   if (mode === "update") {
-  //     getModelValues("Customer");
-  //   }
-  // }, [mode]);
 
   useDataStatusListener({
     statusState: globalRecAccessStatus,
@@ -281,7 +285,7 @@ const Controller = () => {
   return (
     <Fragment>
       <SubHeader title={`Role Form | ${mode.toUpperCase()}`} buttons={navButtons} actions={{ btnBack: handleBack }} />
-      <AuthorizationAlert />
+      <AuthorizationAlert status={roleStatus} dependsOn={["read", "create", "update"]} />
 
       <Row className="g-0">
         <Col md={4} className="pe-2">
@@ -294,7 +298,7 @@ const Controller = () => {
               onChange: globalRAccessOnChange,
               onMenuOpen: () => {},
             }}
-            selectOptions={{}}
+            selectOptions={models.data}
           />
         </Col>
       </Row>

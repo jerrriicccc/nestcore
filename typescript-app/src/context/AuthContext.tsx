@@ -33,11 +33,11 @@ const isTokenExpired = (token: string): boolean => {
       console.error("Token payload does not contain a valid 'exp' claim.", payload);
       return true;
     }
-    const expirationTime = payload.exp * 1000; // exp is in seconds, convert to milliseconds
+    const expirationTime = payload.exp * 1000;
     return Date.now() >= expirationTime;
   } catch (error) {
     console.error("Error decoding token or checking expiry:", error);
-    return true; // Assume expired if decoding fails
+    return true;
   }
 };
 
@@ -49,7 +49,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     checkAuthStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuthStatus = async () => {

@@ -7,20 +7,22 @@ import { RoleAccessDetailsModule } from 'src/pages/roleaccessdetails/roleaccessd
 import { RoleAccessDetailEntity } from '../roleaccessdetails/entity/roleaccessdetail.entity';
 import { RoleLineEntity } from '../rolelines/entity/roleline.entity';
 import { RoleLinesModule } from '../rolelines/roleline.module';
-import { Customer } from '../customers/entity/customers.entity';
-import { CustomersModule } from '../customers/customer.module';
+import { AppointmentStatusEntity } from '../appointmentstatuses/entity/appointmentstatus.entity';
+import { AppointmentStatusModule } from '../appointmentstatuses/appointmentstatus.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       RoleEntity,
-      RoleAccessDetailEntity,
-      RoleLineEntity,
-      Customer,
+      // RoleAccessDetailEntity,
+      // RoleLineEntity,
+      // AppointmentStatusEntity,
+      // Customer,
     ]),
     RoleAccessDetailsModule,
     RoleLinesModule,
-    CustomersModule,
+    // CustomersModule,
+    AppointmentStatusModule,
   ],
   providers: [RolesService],
   controllers: [RolesController],

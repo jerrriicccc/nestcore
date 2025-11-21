@@ -15,15 +15,14 @@ export interface SidebarItem {
 }
 
 export const DashboardItems: SidebarItem[] = [{ link: "/dashboard", caption: "Dashboard", icon: <DashboardIcon /> }];
+export const ReportItems: SidebarItem[] = [{ link: "/reportlist", caption: "Report" }];
 export const bookingMenuItems: SidebarItem[] = [
   { link: "/appointmentlist", caption: "List", icon: <FormatListBulletedIcon /> },
-  { link: "/appointmentsettings/create", caption: "Settings", icon: <FormatListBulletedIcon /> },
+  { link: "/appointmentworkflowsetting/create", caption: "Workflow ", icon: <FormatListBulletedIcon /> },
+  { link: "/servicesettinghome", caption: "Settings", icon: <FormatListBulletedIcon /> },
 ];
 export const servicesMenuItems: SidebarItem[] = [{ link: "/servicesettinghome", caption: "Home", icon: <FormatListBulletedIcon /> }];
-export const workflowMenuItems: SidebarItem[] = [
-  { link: "/workflowsettings/create", caption: "List", icon: <FormatListBulletedIcon /> },
-  { link: "/statuses/create", caption: "Status", icon: <FormatListBulletedIcon /> },
-];
+export const workflowMenuItems: SidebarItem[] = [{ link: "/statuses/create", caption: "Status", icon: <FormatListBulletedIcon /> }];
 
 export const userMenuItems: SidebarItem[] = [
   { link: "/userlist", caption: "Users", icon: <PeopleIcon /> },
@@ -91,7 +90,7 @@ const Sidebar: React.FC = () => {
         </Collapse>
 
         {/* Services  */}
-        <ListItemButton onClick={() => handleToggle("services")}>
+        {/* <ListItemButton onClick={() => handleToggle("services")}>
           <ListItemText primary="Services" />
           {openMenus["services"] ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
@@ -106,10 +105,10 @@ const Sidebar: React.FC = () => {
               </ListItemButton>
             ))}
           </List>
-        </Collapse>
+        </Collapse> */}
 
         {/* Workflow Settings  */}
-        <ListItemButton onClick={() => handleToggle("workflowsettings")}>
+        {/* <ListItemButton onClick={() => handleToggle("workflowsettings")}>
           <ListItemText primary="Workflow" />
           {openMenus["workflowsettings"] ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
@@ -124,7 +123,9 @@ const Sidebar: React.FC = () => {
               </ListItemButton>
             ))}
           </List>
-        </Collapse>
+        </Collapse> */}
+
+        {ReportItems.map((item) => renderMenuItem(item))}
 
         {/* System Users */}
         <ListItemButton onClick={() => handleToggle("users")}>

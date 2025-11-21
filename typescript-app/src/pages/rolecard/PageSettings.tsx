@@ -9,7 +9,7 @@ export const defaultState = { data: { name: "" }, meta: {} };
 export const modelConfig = { read: "/getcard", update: "/updatecard", create: "/newcard" };
 
 export const defStatAccessDetails = { data: {}, meta: {} };
-export const modelConfigGetAllOptions = { read: "/getallaccessoptions" };
+export const modelConfigGetAllOptions = { read: "/getoptionbyquerystring" };
 
 export const globalRecordTable = {
   columns: [
@@ -23,7 +23,7 @@ export const globalRecordTable = {
 
 export const moduleTable = {
   columns: [
-    { label: "Module", id: "accesskey" },
+    { label: "Module", id: "accessName" },
     { label: "Value", id: "accessvalueinput", render: (row: any) => row.accessvalueinput },
     { id: "id", hidden: true },
   ],

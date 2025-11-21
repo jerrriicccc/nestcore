@@ -1,25 +1,20 @@
 import { useValidateByType } from "../../lib/use-validation";
 
-export const navButtons: any[] = [
-  { type: "link" as "link", label: "Back", name: "btnBack" },
-  { type: "link" as "link", label: "Create Status", name: "btnCreate", url: "/statuses/create" },
-];
+export const navButtons: any[] = [{ type: "link" as "link", label: "Back", name: "btnBack" }];
 
-export const path = "/";
-export const route = { home: "/timeschedules/create" };
+export const path = "/appointmentstatuses";
+export const route = { home: "/appointmentstatus/create" };
 export const defaultState = { data: [], meta: {} };
 export const modelConfig = {
   read: "/index",
   delete: "/deletecard",
 };
-export const defaultStateCard = { data: { timeschedule: "" }, meta: {} };
+export const defaultStateCard = { data: { status: "" }, meta: {} };
 export const modelConfigCard = { read: "/getcard", create: "/newcard", update: "/updatecard" };
 
 export const listTable = {
   columns: [
-    { label: "Status", id: "Status" },
-    { label: "Order Number", id: "Order Number" },
-    { label: "Linked Status", id: "Linked Status" },
+    { label: "Status", id: "status" },
     { id: "id", hidden: true },
   ],
   buttons: [
@@ -27,7 +22,7 @@ export const listTable = {
       name: "update",
       type: "link" as "link",
       label: "Update",
-      url: { path: "/timeschedule/update", ref: "id" },
+      url: { path: "/appointmentstatus/update", ref: "id" },
     },
     {
       name: "delete",

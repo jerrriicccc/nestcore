@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import SubHeader from "../../components/layout/SubHeader";
 import AppointmentForm from "./AppointmentForm";
@@ -22,7 +22,39 @@ const Controller = () => {
 
   const [appointment, appointmentModel, appointmentStatus] = useModel(path, defaultState, modelConfig, cardDataReducer);
 
-  console.log("appointmentStatuscard", appointmentStatus);
+  // console.log("appointmentStatuscard", appointmentStatus);
+
+  useEffect(() => {
+    const action = appointmentStatus?.action;
+    const status = appointmentStatus?.status;
+
+    if (action === "create" || action === "update") {
+      if (status === "error") {
+        const errorMessage = appointmentStatus?.body?.response?.message;
+        navigate("/appointmentlist", {
+          state: {
+            showAlert: true,
+            alertMessage: {
+              severity: "error",
+              title: "Error",
+              message: errorMessage,
+            },
+          },
+        });
+      } else if (status === "success") {
+        navigate("/appointmentlist", {
+          state: {
+            showAlert: true,
+            alertMessage: {
+              severity: "success",
+              title: "Success",
+              message: action === "create" ? "Appointment created successfully!" : "Appointment updated successfully!",
+            },
+          },
+        });
+      }
+    }
+  }, [appointmentStatus, navigate]);
 
   const getappointmentById = useDataById({
     callbackFunction: appointmentModel.get,
@@ -48,18 +80,6 @@ const Controller = () => {
     mode,
     options: {
       dispatchRequest: true,
-      onSuccess: () => {
-        navigate("/appointmentlist", {
-          state: {
-            showAlert: true,
-            alertMessage: {
-              severity: "success",
-              title: "Success",
-              message: mode === "create" ? "Customer created successfully!" : "Customer updated successfully!",
-            },
-          },
-        });
-      },
     },
   });
 

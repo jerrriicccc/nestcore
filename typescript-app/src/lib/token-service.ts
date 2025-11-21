@@ -1,5 +1,3 @@
-import { RBAC_TREE } from "./constants";
-
 const TOKEN_KEY = "token";
 const RBAC_PREFIX = "RBAC-";
 
@@ -42,11 +40,6 @@ export const setToken = (token: string, rbacTokens?: { [key: string]: string }, 
   if (rbacTokens) {
     Object.entries(rbacTokens).forEach(([module, rbacToken]) => {
       sessionStorage.setItem(`${RBAC_PREFIX}${module}`, rbacToken);
-    });
-  } else {
-    // Fallback to storing the main token for each module (legacy behavior)
-    Object.values(RBAC_TREE).forEach((key) => {
-      sessionStorage.setItem(`${RBAC_PREFIX}${key}`, token);
     });
   }
 };

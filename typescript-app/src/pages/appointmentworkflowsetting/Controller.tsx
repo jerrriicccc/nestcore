@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useLocation, useNavigate } from "react-rout
 import { CircularProgress, Box } from "@mui/material";
 
 // COMPONENTS
-import StatusTable from "./StatusTable";
+import WorkflowSettingTable from "./WorkflowSettingTable";
 import SubHeader from "../../components/layout/SubHeader";
 import SearchPane from "../../components/SearchPane";
 import Pagination from "../../components/Pagination";
@@ -11,13 +11,13 @@ import AuthorizationAlert from "../authorization/AuthorizationAlert";
 import { AlertMessages } from "../../components/alert/AlertMessage";
 
 // HOOKS AND UTILS
-import useModel from "../../lib/use-model";
-import { listDataReducer, cardDataReducer } from "../../lib/functions";
+import useModel, { useSelectOption } from "../../lib/use-model";
+import { listDataReducer, cardDataReducer, simpleDataReducer } from "../../lib/functions";
 import { useInitializeData, useSimpleConfirmDelete, useDataById, useDataBySearchParams, useDataStatusListener, useRedirectOnErrorStatus, useCardFormSubmitHandler } from "../../lib/use-datatool";
 import { useAlert } from "../../context/AlertContext";
 
 // SETTINGS
-import { path, defaultState, modelConfig, useLocalValidation, defaultStateCard, modelConfigCard, navButtons } from "./PageSettings";
+import { path, defaultState, modelConfig, useLocalValidation, defaultStateCard, modelConfigCard, navButtons, optionState, optionEndPoints } from "./PageSettings";
 
 // TYPES
 type InputType = {
@@ -44,15 +44,21 @@ const Controller = () => {
   }, []);
 
   // MODEL
-  const [serviceForm, serviceFormModel] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
+  const [appointmentWorkflowSettForm, appointmentWorkflowSettFormModel] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
+  const [getApptStatus, getApptStatusOptions] = useSelectOption(path, optionState, optionEndPoints.appointmentstat, simpleDataReducer);
+
+  useInitializeData({
+    functionName: getApptStatusOptions,
+    args: "appointmentstatus",
+  });
 
   const cardSubmitHandler = useCardFormSubmitHandler({
     validateFn: useLocalValidation,
     data: {
-      ...serviceForm.data,
+      ...appointmentWorkflowSettForm.data,
       id: mode === "update" ? Number(id) : undefined,
     },
-    model: serviceFormModel,
+    model: appointmentWorkflowSettFormModel,
     mode,
     options: {
       dispatchRequest: true,
@@ -66,14 +72,14 @@ const Controller = () => {
           key: Date.now(),
         };
 
-        serviceFormModel.dataDispatch({
+        appointmentWorkflowSettFormModel.dataDispatch({
           type: "updateField",
           response: { name: "mode", value: "create" },
         });
 
         setAlertMessage(alertPayload);
         emptyFormFields();
-        navigate("/statuses/create");
+        navigate("/appointmentworkflowsetting/create");
       },
     },
   });
@@ -82,20 +88,20 @@ const Controller = () => {
     const proceed = window.confirm("Are you sure you want to submit this form?");
     if (proceed) {
       await cardSubmitHandler();
-      await serviceTableModel.get();
+      await appointmentWorkflowSettTableModel.get();
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement> | InputType) => {
     if ("target" in e) {
       const { name, value } = e.target;
-      serviceFormModel.dataDispatch({
+      appointmentWorkflowSettFormModel.dataDispatch({
         type: "updateField",
         response: { name, value },
       });
     } else {
       const { name, value, inputType } = e;
-      serviceFormModel.dataDispatch({
+      appointmentWorkflowSettFormModel.dataDispatch({
         type: "updateField",
         response: { name, value, inputType: inputType as "select-single" | "select-multi" },
       });
@@ -103,7 +109,7 @@ const Controller = () => {
   };
 
   const emptyFormFields = () => {
-    serviceFormModel.dataDispatch({
+    appointmentWorkflowSettFormModel.dataDispatch({
       type: "reset",
       response: defaultStateCard.data,
     });
@@ -111,11 +117,11 @@ const Controller = () => {
 
   const handleCancel = () => {
     emptyFormFields();
-    serviceFormModel.dataDispatch({
+    appointmentWorkflowSettFormModel.dataDispatch({
       type: "updateField",
       response: { name: "mode", value: "create" },
     });
-    navigate("/statuses/create");
+    navigate("/appointmentworkflowsetting/create");
   };
 
   /** --------------------------------  TABLE DATA INITIALIZATION ------------------------------------  **/
@@ -123,15 +129,15 @@ const Controller = () => {
   // ROUTER HOOKS
 
   // MODEL
-  const [serviceTable, serviceTableModel, serviceTableStatus] = useModel(path, defaultState, modelConfig, listDataReducer);
-  // const [fetchData] = useDataBySearchParams({ callbackFunction: serviceTableModel.get, searchParam: "searchcond" });
+  const [appointmentWorkflowSettTable, appointmentWorkflowSettTableModel, appointmentWorkflowSettTableStatus] = useModel(path, defaultState, modelConfig, listDataReducer);
+  // const [fetchData] = useDataBySearchParams({ callbackFunction: appointmentWorkflowSettTableModel.get, searchParam: "searchcond" });
 
   // STATE MANAGEMENT
   const [isLoading, setIsLoading] = useState(false);
 
   // DELETE HANDLER
   const sendDeleteRequest = useSimpleConfirmDelete({
-    delFn: serviceTableModel.delete,
+    delFn: appointmentWorkflowSettTableModel.delete,
     onSuccess: async () => {
       setAlertMessage(null);
       setTimeout(() => {
@@ -142,7 +148,7 @@ const Controller = () => {
         });
       }, 90);
 
-      await serviceTableModel.get();
+      await appointmentWorkflowSettTableModel.get();
     },
   });
 
@@ -154,12 +160,12 @@ const Controller = () => {
   };
 
   // DATA FETCHING IF ID IS PRESENT
-  const getServiceById = useDataById({ callbackFunction: serviceFormModel.get, id: Number(id), options: { preventZeroValue: true, action: "read" } });
+  const getServiceById = useDataById({ callbackFunction: appointmentWorkflowSettFormModel.get, id: Number(id), options: { preventZeroValue: true, action: "read" } });
 
   // FETCH DATA ON PAGE/SEARCH CHANGE
   useInitializeData({
     functionName: () => {
-      serviceTableModel.get();
+      appointmentWorkflowSettTableModel.get();
     },
   });
 
@@ -169,8 +175,8 @@ const Controller = () => {
     args: mode === "update" && id ? Number(id) : undefined,
     deps: [mode, id],
   });
-  useDataStatusListener({ statusState: serviceTableStatus, action: "read", status: "success", callbackFunction: () => setIsLoading(false) });
-  useRedirectOnErrorStatus({ path: "/", statusState: serviceTableStatus, action: "read", errorCode: 401 });
+  useDataStatusListener({ statusState: appointmentWorkflowSettTableStatus, action: "read", status: "success", callbackFunction: () => setIsLoading(false) });
+  useRedirectOnErrorStatus({ path: "/", statusState: appointmentWorkflowSettTableStatus, action: "read", errorCode: 401 });
 
   // DERIVED VALUES
   const tableActions: TableActions = {
@@ -183,9 +189,9 @@ const Controller = () => {
   };
   return (
     <Fragment>
-      <SubHeader title="Status List" buttons={navButtons} actions={{ btnBack: handleBack }} />
+      <SubHeader title="Workflow" buttons={navButtons} actions={{ btnBack: handleBack }} />
       {alertMessage && <AlertMessages {...alertMessage} alertKey={alertMessage.key} key={alertMessage.key} />}
-      <AuthorizationAlert />
+      <AuthorizationAlert status={appointmentWorkflowSettTableStatus} dependsOn={["read", "create", "update", "delete"]} />
 
       {/* TABLE */}
       <div className="px-4">
@@ -195,15 +201,23 @@ const Controller = () => {
           </Box>
         ) : (
           <>
-            <StatusTable data={serviceTable?.data || []} actions={tableActions} formData={serviceForm.data} onChange={handleChange} onSubmit={handleSubmit} handleCancelEditForm={handleCancel} />
+            <WorkflowSettingTable
+              data={appointmentWorkflowSettTable?.data || []}
+              actions={tableActions}
+              formData={appointmentWorkflowSettForm.data}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+              handleCancelEditForm={handleCancel}
+              selectOptions={{ appointmentstat: getApptStatus.data }}
+            />
           </>
         )}
       </div>
 
       {/* PAGINATION */}
-      {!isLoading && serviceTable.data.length > 0 && (
+      {!isLoading && appointmentWorkflowSettTable.data.length > 0 && (
         <div className="d-flex justify-content-center ">
-          <Pagination settings={serviceTable.meta} disabled={isLoading} />
+          <Pagination settings={appointmentWorkflowSettTable.meta} disabled={isLoading} />
         </div>
       )}
     </Fragment>

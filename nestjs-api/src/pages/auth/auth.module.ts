@@ -10,7 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { MailModule } from 'src/pages/mail/mail.module';
+import { MailModule } from 'src/pages/email/mail.module';
 import { RateLimitGuard } from './rate-limit.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 

@@ -12,9 +12,10 @@ interface ServiceTableProps {
   onChange?: (e: any) => void;
   onSubmit?: () => void;
   handleCancelEditForm?: () => void; // Added prop
+  selectOptions?: any;
 }
 
-const WorkflowSettingTable = ({ data, actions, formData, onChange, onSubmit, handleCancelEditForm }: ServiceTableProps) => {
+const WorkflowSettingTable = ({ data, actions, formData, onChange, onSubmit, handleCancelEditForm, selectOptions }: ServiceTableProps) => {
   const tableProps = { striped: true, hover: "hover", className: "table-th", size: "sm" };
 
   const recordActions = {
@@ -30,7 +31,7 @@ const WorkflowSettingTable = ({ data, actions, formData, onChange, onSubmit, han
       tableProps={tableProps}
       formRow={
         formData && onChange && onSubmit && handleCancelEditForm
-          ? () => <WorkflowSettingForm data={formData} onChange={onChange} onSubmit={onSubmit} handleCancelEditForm={handleCancelEditForm} />
+          ? () => <WorkflowSettingForm data={formData} onChange={onChange} onSubmit={onSubmit} handleCancelEditForm={handleCancelEditForm} selectOptions={selectOptions} />
           : undefined
       }
     />

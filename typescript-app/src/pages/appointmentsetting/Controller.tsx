@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { CircularProgress, Box } from "@mui/material";
 
 // COMPONENTS
-import WorkflowSettingTable from "./WorkflowSettingTable";
+import AppointmentSettingTable from "./AppointmentSettingTable";
 import SubHeader from "../../components/layout/SubHeader";
 import SearchPane from "../../components/SearchPane";
 import Pagination from "../../components/Pagination";
@@ -44,15 +44,15 @@ const Controller = () => {
   }, []);
 
   // MODEL
-  const [serviceForm, serviceFormModel] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
+  const [AppointmentSettingForm, AppointmentSettingFormModel] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
 
   const cardSubmitHandler = useCardFormSubmitHandler({
     validateFn: useLocalValidation,
     data: {
-      ...serviceForm.data,
+      ...AppointmentSettingForm.data,
       id: mode === "update" ? Number(id) : undefined,
     },
-    model: serviceFormModel,
+    model: AppointmentSettingFormModel,
     mode,
     options: {
       dispatchRequest: true,
@@ -66,14 +66,14 @@ const Controller = () => {
           key: Date.now(),
         };
 
-        serviceFormModel.dataDispatch({
+        AppointmentSettingFormModel.dataDispatch({
           type: "updateField",
           response: { name: "mode", value: "create" },
         });
 
         setAlertMessage(alertPayload);
         emptyFormFields();
-        navigate("/timeschedule/create");
+        navigate("/appointmentsettings/create");
       },
     },
   });
@@ -88,13 +88,13 @@ const Controller = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement> | InputType) => {
     if ("target" in e) {
       const { name, value } = e.target;
-      serviceFormModel.dataDispatch({
+      AppointmentSettingFormModel.dataDispatch({
         type: "updateField",
         response: { name, value },
       });
     } else {
       const { name, value, inputType } = e;
-      serviceFormModel.dataDispatch({
+      AppointmentSettingFormModel.dataDispatch({
         type: "updateField",
         response: { name, value, inputType: inputType as "select-single" | "select-multi" },
       });
@@ -102,7 +102,7 @@ const Controller = () => {
   };
 
   const emptyFormFields = () => {
-    serviceFormModel.dataDispatch({
+    AppointmentSettingFormModel.dataDispatch({
       type: "reset",
       response: defaultStateCard.data,
     });
@@ -110,11 +110,11 @@ const Controller = () => {
 
   const handleCancel = () => {
     emptyFormFields();
-    serviceFormModel.dataDispatch({
+    AppointmentSettingFormModel.dataDispatch({
       type: "updateField",
       response: { name: "mode", value: "create" },
     });
-    navigate("/timeschedule/create");
+    navigate("/appointmentsettings/create");
   };
 
   /** --------------------------------  TABLE DATA INITIALIZATION ------------------------------------  **/
@@ -139,15 +139,15 @@ const Controller = () => {
   );
 
   // MODEL
-  const [serviceTable, serviceTableModel, serviceTableStatus] = useModel(path, defaultState, modelConfig, listDataReducer);
-  const [fetchData] = useDataBySearchParams({ callbackFunction: serviceTableModel.get, searchParam: "searchcond" });
+  const [appointmentSettingTable, appointmentSettingTableModel, appointmentSettingTableStatus] = useModel(path, defaultState, modelConfig, listDataReducer);
+  const [fetchData] = useDataBySearchParams({ callbackFunction: appointmentSettingTableModel.get, searchParam: "searchcond" });
 
   // STATE MANAGEMENT
   const [isLoading, setIsLoading] = useState(false);
 
   // DELETE HANDLER
   const sendDeleteRequest = useSimpleConfirmDelete({
-    delFn: serviceTableModel.delete,
+    delFn: appointmentSettingTableModel.delete,
     onSuccess: async () => {
       setAlertMessage(null);
       setTimeout(() => {
@@ -158,7 +158,7 @@ const Controller = () => {
         });
       }, 90);
 
-      await serviceTableModel.get();
+      await appointmentSettingTableModel.get();
     },
   });
 
@@ -170,7 +170,7 @@ const Controller = () => {
   };
 
   // DATA FETCHING IF ID IS PRESENT
-  const getServiceById = useDataById({ callbackFunction: serviceFormModel.get, id: Number(id), options: { preventZeroValue: true, action: "read" } });
+  const getServiceById = useDataById({ callbackFunction: AppointmentSettingFormModel.get, id: Number(id), options: { preventZeroValue: true, action: "read" } });
 
   // FETCH DATA ON PAGE/SEARCH CHANGE
   useInitializeData({
@@ -188,8 +188,8 @@ const Controller = () => {
     args: mode === "update" && id ? Number(id) : undefined,
     deps: [mode, id],
   });
-  useDataStatusListener({ statusState: serviceTableStatus, action: "read", status: "success", callbackFunction: () => setIsLoading(false) });
-  useRedirectOnErrorStatus({ path: "/", statusState: serviceTableStatus, action: "read", errorCode: 401 });
+  useDataStatusListener({ statusState: appointmentSettingTableStatus, action: "read", status: "success", callbackFunction: () => setIsLoading(false) });
+  useRedirectOnErrorStatus({ path: "/", statusState: appointmentSettingTableStatus, action: "read", errorCode: 401 });
 
   // DERIVED VALUES
   const tableActions: TableActions = {
@@ -202,9 +202,9 @@ const Controller = () => {
   };
   return (
     <Fragment>
-      <SubHeader title="Workflow List" searchPane={<SearchPane onSearch={handleSearch} />} buttons={navButtons} actions={{ btnBack: handleBack }} />
+      <SubHeader title="Settings" searchPane={<SearchPane onSearch={handleSearch} />} buttons={navButtons} actions={{ btnBack: handleBack }} />
       {alertMessage && <AlertMessages {...alertMessage} alertKey={alertMessage.key} key={alertMessage.key} />}
-      <AuthorizationAlert />
+      <AuthorizationAlert status={appointmentSettingTableStatus} dependsOn={["read", "create", "update", "delete"]} />
 
       {/* TABLE */}
       <div className="px-4">
@@ -214,10 +214,10 @@ const Controller = () => {
           </Box>
         ) : (
           <>
-            <WorkflowSettingTable
-              data={serviceTable?.data || []}
+            <AppointmentSettingTable
+              data={appointmentSettingTable?.data || []}
               actions={tableActions}
-              formData={serviceForm.data}
+              formData={AppointmentSettingForm.data}
               onChange={handleChange}
               onSubmit={handleSubmit}
               handleCancelEditForm={handleCancel}
@@ -227,9 +227,9 @@ const Controller = () => {
       </div>
 
       {/* PAGINATION */}
-      {!isLoading && serviceTable.data.length > 0 && (
+      {!isLoading && appointmentSettingTable.data.length > 0 && (
         <div className="d-flex justify-content-center ">
-          <Pagination settings={serviceTable.meta} disabled={isLoading} />
+          <Pagination settings={appointmentSettingTable.meta} disabled={isLoading} />
         </div>
       )}
     </Fragment>

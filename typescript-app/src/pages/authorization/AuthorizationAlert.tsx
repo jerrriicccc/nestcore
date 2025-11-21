@@ -21,10 +21,10 @@ const AuthorizationAlert = (props: AuthorizationAlertProps) => {
     const actionAllowed = dependsOn.length === 0 || (status?.action && dependsOn.includes(status.action));
 
     // Consider both 401 and 403 as access-denied indicators. Also allow message-based detection.
-    const isAccessDenied = code === 401 || (typeof message === "string" && message.toLowerCase().includes("no access"));
+    const isAccessDenied = code === 401 || 403 || (typeof message === "string" && message.toLowerCase().includes("no access"));
 
     if (status?.status === "error" && status?.action !== "validation" && isAccessDenied && actionAllowed) {
-      setAlert({ code: code || 401, message: typeof message === "string" ? message : "Access denied" });
+      setAlert({ code: code || 401 || 403, message: typeof message === "string" ? message : "Access denied" });
     } else {
       setAlert(null);
     }

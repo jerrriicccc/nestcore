@@ -10,12 +10,18 @@ import {
   ParseIntPipe,
   Req,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { AppointmentSettingService } from './appointmentsetting.service';
 import { CreateDto, UpdateDto } from './dto/appointmentsetting.dto';
 import { AppointmentSettingEntity } from './entity/appointmentsetting.entity';
 import { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
+import { ValidateAccessMethod } from 'src/component/validateaccess/validate-access.decorator';
+import {
+  denyRoleBasedAccess,
+  hasReadAccess,
+} from 'src/component/validateaccess/validate-rbactoken';
 
 interface PaginationQuery {
   page?: number;
@@ -30,7 +36,10 @@ export class AppointmentSettingsController {
   ) {}
 
   @Get('index')
+  @HttpCode(200)
+  @ValidateAccessMethod({ RBACModule: 'appointmentsettings' })
   async findAll(@Query() query: PaginationQuery, @Req() req: Request) {
+    if (!hasReadAccess(req)) return denyRoleBasedAccess();
     const page = Number(query.page) || 1;
     const searchCond = query.searchcond || '';
 

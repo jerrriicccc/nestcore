@@ -49,64 +49,7 @@ export const generateURL = (row: Record<string, any>, url: { path: string; ref: 
   return {};
 };
 
-const parseLabels = (value: any, linkedStatuses?: any[]) => {
-  if (!value && (!linkedStatuses || linkedStatuses.length === 0)) return [];
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value === "string") {
-    // Prefer comma/semicolon/pipe delimiters
-    if (value.includes(","))
-      return value
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    if (value.includes(";"))
-      return value
-        .split(";")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    if (value.includes("|"))
-      return value
-        .split("|")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    // If linkedStatuses count exists, try to split words into that many groups
-    if (Array.isArray(linkedStatuses) && linkedStatuses.length > 0) {
-      const words = value.trim().split(/\s+/);
-      const groups: string[] = [];
-      const n = linkedStatuses.length;
-      const size = Math.ceil(words.length / n) || 1;
-      for (let i = 0; i < n; i++) {
-        const chunk = words.slice(i * size, (i + 1) * size).join(" ");
-        if (chunk) groups.push(chunk);
-      }
-      if (groups.length > 0) return groups;
-    }
-    // Fallback: return the whole string as single label
-    return [value.trim()];
-  }
-  return [String(value)];
-};
-
-// Produce a pleasant pastel-like palette using HSL derived from the string.
-const getNiceColors = (label?: string) => {
-  const str = String(label || "");
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    // eslint-disable-next-line no-bitwise
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  const saturation = 64; // percent
-  const dotLight = 52; // percent for the colored dot
-  const bgLight = 90; // percent for the pill background (slightly darker so it's visible)
-
-  const dotColor = `hsl(${hue}, ${saturation}%, ${dotLight}%)`;
-  const bgColor = `hsla(${hue}, ${saturation}%, ${bgLight}%, 1)`;
-  const textColor = `#0f172a`;
-  return { dotColor, bgColor, textColor };
-};
-
-const FormTable: React.FC<TableProps> = ({ settings, data, recordActions, tableProps = {}, actionSetting = {}, visibleColumns = {}, formRow }) => {
+const DefaultTable: React.FC<TableProps> = ({ settings, data, recordActions, tableProps = {}, actionSetting = {}, visibleColumns = {}, formRow }) => {
   const { style: actionStyle = {}, visible: actionVisible = true } = actionSetting;
 
   const visibleColumnIds = Object.entries(visibleColumns)
@@ -138,46 +81,7 @@ const FormTable: React.FC<TableProps> = ({ settings, data, recordActions, tableP
             data.map((row, rowIndex) => (
               <tr key={rowIndex}>
                 {filteredColumns.map((column, colIndex) => (
-                  <td key={column.id}>
-                    {column.id === "linkedstatuses" ? (
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}></div>
-                    ) : column.id === "LSNames" ? (
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                        {parseLabels(row[column.id], row.linkedstatuses).map((label: string, i: number) => {
-                          const { dotColor, bgColor, textColor } = getNiceColors(label);
-                          return (
-                            <div
-                              key={i}
-                              style={{
-                                backgroundColor: bgColor,
-                                color: textColor,
-                                borderRadius: 20,
-                                padding: "6px 10px",
-                                fontSize: 14,
-                                fontWeight: 500,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 8,
-                              }}
-                            >
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  width: 10,
-                                  height: 10,
-                                  borderRadius: "50%",
-                                  backgroundColor: dotColor,
-                                }}
-                              />
-                              <span>{label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      row[column.id]
-                    )}
-                  </td>
+                  <td key={column.id}>{row[column.id]}</td>
                 ))}
                 {actionVisible && (
                   <td style={{ verticalAlign: "middle" }}>
@@ -216,4 +120,4 @@ const FormTable: React.FC<TableProps> = ({ settings, data, recordActions, tableP
   );
 };
 
-export default FormTable;
+export default DefaultTable;

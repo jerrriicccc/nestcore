@@ -51,6 +51,110 @@ export class RoleLinesService {
     return await repo.save(result);
   }
 
+  // async findAll<T extends ObjectLiteral>(
+  //   entity: EntityTarget<T>,
+  //   dto: SearchCondDto,
+  // ): Promise<any[]> {
+  //   const repo = this.getRepository(entity);
+  //   const where = {} as FindOptionsWhere<T>;
+
+  //   // Handle roleid
+  //   if (dto.roleid) {
+  //     Object.assign(where, { roleid: dto.roleid });
+  //   }
+
+  //   // Handle typeid (single or array)
+  //   if (dto.typeid) {
+  //     if (Array.isArray(dto.typeid)) {
+  //       Object.assign(where, { typeid: In(dto.typeid) });
+  //     } else {
+  //       Object.assign(where, { typeid: dto.typeid });
+  //     }
+  //   }
+
+  //   const data = await repo.find({ where });
+
+  //   // Lookup RoleAccessDetail by accesskey and typeid
+  //   const result = await Promise.all(
+  //     data.map(async (data: any) => {
+  //       const accessDetailRepo = this.getRepository(RoleAccessDetailEntity);
+  //       const accessDetail = await accessDetailRepo.findOne({
+  //         where: {
+  //           accesskey: data.accesskey,
+  //           typeid: data.typeid,
+  //         } as any,
+  //       });
+
+  //       return {
+  //         ...data,
+  //         availableOptions: accessDetail?.access || [],
+  //       };
+  //     }),
+  //   );
+
+  //   return result;
+  // }
+
+  private async getAccessName(accesskey: string): Promise<string> {
+    const repo = this.getRepository(RoleAccessDetailEntity);
+    const accessDetail = await repo.findOne({
+      where: { accesskey: accesskey } as any,
+    });
+    const result = accessDetail?.name || 'Unknown';
+    return result;
+  }
+
+  // async findAll<T extends ObjectLiteral>(
+  //   entity: EntityTarget<T>,
+  //   dto: SearchCondDto,
+  // ): Promise<any[]> {
+  //   const repo = this.getRepository(entity);
+  //   const where = {} as FindOptionsWhere<T>;
+
+  //   // Handle roleid
+  //   if (dto.roleid) {
+  //     Object.assign(where, { roleid: dto.roleid });
+  //   }
+
+  //   // Handle typeid (single or array)
+  //   if (dto.typeid) {
+  //     if (Array.isArray(dto.typeid)) {
+  //       Object.assign(where, { typeid: In(dto.typeid) });
+  //     } else {
+  //       Object.assign(where, { typeid: dto.typeid });
+  //     }
+  //   }
+
+  //   const data = await repo.find({
+  //     where,
+  //     order: {
+  //       typeid: 'ASC',
+  //       accesskey: 'ASC',
+  //     } as any,
+  //   });
+
+  //   // Lookup RoleAccessDetail by accesskey and typeid
+  //   const result = await Promise.all(
+  //     data.map(async (data: any) => {
+  //       const accessDetailRepo = this.getRepository(RoleAccessDetailEntity);
+
+  //       const accessDetail = await accessDetailRepo.findOne({
+  //         where: {
+  //           accesskey: data.accesskey,
+  //           typeid: data.typeid,
+  //         } as any,
+  //       });
+
+  //       return {
+  //         ...data,
+  //         availableOptions: accessDetail?.access || [],
+  //       };
+  //     }),
+  //   );
+
+  //   return result;
+  // }
+
   async findAll<T extends ObjectLiteral>(
     entity: EntityTarget<T>,
     dto: SearchCondDto,
@@ -72,9 +176,15 @@ export class RoleLinesService {
       }
     }
 
-    const data = await repo.find({ where });
+    const data = await repo.find({
+      where,
+      order: {
+        typeid: 'ASC',
+        accesskey: 'ASC',
+      } as any,
+    });
 
-    // Lookup RoleAccessDetail by accesskey and typeid
+    // Lookup RoleAccessDetail by accesskey and typeid, and get accessName
     const result = await Promise.all(
       data.map(async (data: any) => {
         const accessDetailRepo = this.getRepository(RoleAccessDetailEntity);
@@ -85,9 +195,13 @@ export class RoleLinesService {
           } as any,
         });
 
+        // Get the access name using getAccessName method
+        const accessName = await this.getAccessName(data.accesskey);
+
         return {
           ...data,
           availableOptions: accessDetail?.access || [],
+          accessName, // Add the access name to the result
         };
       }),
     );
