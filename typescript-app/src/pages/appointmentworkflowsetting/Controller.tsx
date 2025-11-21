@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { CircularProgress, Box } from "@mui/material";
 
@@ -37,15 +37,35 @@ const Controller = () => {
   const { mode = "create" } = useParams<{ mode?: "create" | "update" }>();
   const [searchParamsById] = useSearchParams();
   const id = searchParamsById.get("id");
-  const { alert: alertMessage, setAlert: setAlertMessage } = useAlert();
+  const { alertMessage, setAlertMessage } = useAlert();
 
   useEffect(() => {
     setAlertMessage(null);
   }, []);
 
   // MODEL
-  const [appointmentWorkflowSettForm, appointmentWorkflowSettFormModel] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
+  const [appointmentWorkflowSettForm, appointmentWorkflowSettFormModel, appointmentWorkflowSettFormStatus] = useModel(path, defaultStateCard, modelConfigCard, cardDataReducer);
   const [getApptStatus, getApptStatusOptions] = useSelectOption(path, optionState, optionEndPoints.appointmentstat, simpleDataReducer);
+
+  // console.log("appointmentWorkflowSettFormStatus", appointmentWorkflowSettFormStatus);
+
+  // Handle Form Status (Create/Update)
+  useEffect(() => {
+    const action = appointmentWorkflowSettFormStatus?.action;
+    const status = appointmentWorkflowSettFormStatus?.status;
+
+    if (action === "create" || action === "update") {
+      if (status === "error") {
+        const errorMessage = appointmentWorkflowSettFormStatus?.body?.response?.message;
+        setAlertMessage({
+          severity: "error",
+          title: "Error",
+          message: errorMessage,
+        });
+        navigate("/appointmentworkflowsetting/create");
+      }
+    }
+  }, [appointmentWorkflowSettFormStatus, navigate]);
 
   useInitializeData({
     functionName: getApptStatusOptions,
@@ -63,21 +83,20 @@ const Controller = () => {
     options: {
       dispatchRequest: true,
       onSuccess: () => {
-        // // if (typeof fetchData === "function") fetchData();
-
-        const alertPayload = {
-          severity: mode === "create" ? ("success" as const) : ("success" as const),
-          title: "Success",
-          message: mode === "create" ? "Successfully created!" : "Successfully updated!",
-          key: Date.now(),
-        };
-
         appointmentWorkflowSettFormModel.dataDispatch({
           type: "updateField",
           response: { name: "mode", value: "create" },
         });
 
+        const alertPayload = {
+          severity: "success" as const,
+          title: "Success",
+          message: mode === "create" ? "Workflow created!" : "Workflow updated!",
+          key: Date.now(),
+        };
+        // ensure the alert is visible even if form status effect doesn't run before navigation
         setAlertMessage(alertPayload);
+
         emptyFormFields();
         navigate("/appointmentworkflowsetting/create");
       },
@@ -126,11 +145,39 @@ const Controller = () => {
 
   /** --------------------------------  TABLE DATA INITIALIZATION ------------------------------------  **/
 
-  // ROUTER HOOKS
-
   // MODEL
   const [appointmentWorkflowSettTable, appointmentWorkflowSettTableModel, appointmentWorkflowSettTableStatus] = useModel(path, defaultState, modelConfig, listDataReducer);
-  // const [fetchData] = useDataBySearchParams({ callbackFunction: appointmentWorkflowSettTableModel.get, searchParam: "searchcond" });
+  const deleteIdRef = useRef<number | null>(null);
+
+  // console.log("appointmentWorkflowSettTableStatus", appointmentWorkflowSettTableStatus);
+
+  // Handle Table Status (Delete)
+  useEffect(() => {
+    const action = appointmentWorkflowSettTableStatus?.action;
+    const status = appointmentWorkflowSettTableStatus?.status;
+
+    if (action === "delete") {
+      if (status === "error") {
+        const errorMessage = appointmentWorkflowSettTableStatus?.body?.response?.message;
+        setAlertMessage({
+          severity: "error",
+          title: "Error",
+          message: errorMessage,
+        });
+        navigate("/appointmentworkflowsetting/create");
+      } else if (status === "success") {
+        setAlertMessage({
+          severity: "success",
+          title: "Success",
+          message: "Deleted successfully!",
+        });
+        // setTimeout(() => {
+        appointmentWorkflowSettTableModel.get();
+        // }, 100);
+        navigate("/appointmentworkflowsetting/create");
+      }
+    }
+  }, [appointmentWorkflowSettTableStatus, navigate]);
 
   // STATE MANAGEMENT
   const [isLoading, setIsLoading] = useState(false);
@@ -138,23 +185,13 @@ const Controller = () => {
   // DELETE HANDLER
   const sendDeleteRequest = useSimpleConfirmDelete({
     delFn: appointmentWorkflowSettTableModel.delete,
-    onSuccess: async () => {
-      setAlertMessage(null);
-      setTimeout(() => {
-        setAlertMessage({
-          severity: "success",
-          title: "Success",
-          message: "Deleted successfully!",
-        });
-      }, 90);
-
-      await appointmentWorkflowSettTableModel.get();
-    },
   });
 
   const getDeleteById = (id: number) => {
     const proceed = window.confirm("Are you sure?");
     if (proceed) {
+      deleteIdRef.current = id;
+      setAlertMessage(null);
       sendDeleteRequest({ row: { id } });
     }
   };
@@ -187,10 +224,11 @@ const Controller = () => {
   const handleBack = () => {
     navigate(-1);
   };
+
   return (
     <Fragment>
       <SubHeader title="Workflow" buttons={navButtons} actions={{ btnBack: handleBack }} />
-      {alertMessage && <AlertMessages {...alertMessage} alertKey={alertMessage.key} key={alertMessage.key} />}
+      {alertMessage && <AlertMessages {...alertMessage} />}
       <AuthorizationAlert status={appointmentWorkflowSettTableStatus} dependsOn={["read", "create", "update", "delete"]} />
 
       {/* TABLE */}
