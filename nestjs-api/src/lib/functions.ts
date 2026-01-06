@@ -1,5 +1,3 @@
-import { query } from 'express';
-
 export const simpleDataReducer = (state: any, action: any) => {
   if (action.type === 'read') {
     return action.response;

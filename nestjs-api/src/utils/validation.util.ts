@@ -1,42 +1,3 @@
-// // src/utils/validation.util.ts
-// import { applyDecorators } from '@nestjs/common';
-// import {
-//   IsString,
-//   IsNotEmpty,
-//   IsDateString,
-//   IsNumber,
-//   IsOptional,
-// } from 'class-validator';
-
-// /**
-//  * String field - required
-//  */
-// export function IsRequiredString() {
-//   return applyDecorators(IsString(), IsNotEmpty());
-// }
-
-// /**
-//  * Date field - required, must be valid ISO date
-//  */
-// export function IsRequiredDate() {
-//   return applyDecorators(IsDateString(), IsNotEmpty());
-// }
-
-// /**
-//  * Number field - required
-//  */
-// export function IsRequiredNumber() {
-//   return applyDecorators(IsNumber(), IsNotEmpty());
-// }
-
-// /**
-//  * Number field - optional
-//  */
-// export function IsOptionalNumber() {
-//   return applyDecorators(IsNumber(), IsOptional());
-// }
-
-// src/utils/validation.util.ts
 import { applyDecorators } from '@nestjs/common';
 import {
   IsString,
@@ -95,4 +56,11 @@ export function IsOptionalInteger() {
  */
 export function IsOptionalString() {
   return applyDecorators(IsString(), IsOptional());
+}
+
+/**
+ * Date field - optional, must be valid ISO date if provided
+ */
+export function IsOptionalDate() {
+  return applyDecorators(IsDateString(), IsOptional());
 }

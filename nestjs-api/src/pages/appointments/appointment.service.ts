@@ -118,14 +118,79 @@ export class AppointmentService {
     };
   }
 
-  private buildSearchQuery(queryBuilder: any, searchCond: string) {
-    queryBuilder;
+  private buildSearchQuery(queryBuilder: any, searchCond: string): void {
+    if (!searchCond?.trim()) {
+      return;
+    }
 
-    if (searchCond) {
-      queryBuilder.where(
-        '(appointment.lastname LIKE :search OR appointment.firstname LIKE :search)',
-        { search: `%${searchCond}%` },
-      );
+    const conditions = this.parseSearchConditions(searchCond);
+    this.applySearchConditions(queryBuilder, conditions);
+  }
+
+  private parseSearchConditions(
+    searchCond: string,
+  ): Array<{ field: string; value: string }> {
+    const conditions: Array<{ field: string; value: string }> = [];
+    const parts = searchCond.split('|');
+
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+
+      const colonIndex = trimmed.indexOf(':');
+      if (colonIndex <= 0 || colonIndex >= trimmed.length - 1) continue;
+
+      const field = trimmed.substring(0, colonIndex).trim();
+      const value = trimmed.substring(colonIndex + 1).trim();
+
+      if (field && value) {
+        conditions.push({ field, value });
+      }
+    }
+
+    return conditions;
+  }
+
+  private applySearchConditions(
+    queryBuilder: any,
+    conditions: Array<{ field: string; value: string }>,
+  ): void {
+    const whereConditions: string[] = [];
+    const parameters: Record<string, any> = {};
+
+    for (let i = 0; i < conditions.length; i++) {
+      const { field, value } = conditions[i];
+      const paramName = `search${i}`;
+
+      switch (field) {
+        case 'lastname':
+          whereConditions.push(`appointment.lastname LIKE :${paramName}`);
+          parameters[paramName] = `%${value}%`;
+          break;
+
+        case 'firstname':
+          whereConditions.push(`appointment.firstname LIKE :${paramName}`);
+          parameters[paramName] = `%${value}%`;
+          break;
+
+        case 'from_datecreated':
+          whereConditions.push(
+            `DATE(appointment.datecreated) >= :${paramName}`,
+          );
+          parameters[paramName] = value;
+          break;
+
+        case 'to_datecreated':
+          whereConditions.push(
+            `DATE(appointment.datecreated) <= :${paramName}`,
+          );
+          parameters[paramName] = value;
+          break;
+      }
+    }
+
+    if (whereConditions.length > 0) {
+      queryBuilder.where(`(${whereConditions.join(' AND ')})`, parameters);
     }
   }
 

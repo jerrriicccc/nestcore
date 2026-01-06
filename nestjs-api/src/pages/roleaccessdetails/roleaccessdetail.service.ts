@@ -11,12 +11,12 @@ import {
   ObjectLiteral,
   EntityTarget,
   DeepPartial,
-  In,
 } from 'typeorm';
 import { RoleAccessDetailEntity } from './entity/roleaccessdetail.entity';
-import { RoleAccessOptionEntity } from '../roleaccessoptions/entity/roleaccessoption.entity';
+// import { RoleAccessOptionEntity } from '../roleaccessoptions/entity/roleaccessoption.entity';
 import { paginate } from 'nestjs-typeorm-paginate';
 import { RoleAccessTypeEntity } from 'src/pages/roleaccesstypes/entity/roleaccesstype.entity';
+import { RoleLineEntity } from '../rolelines/entity/roleline.entity';
 
 @Injectable()
 export class RoleAccessDetailsService {
@@ -27,10 +27,12 @@ export class RoleAccessDetailsService {
     private readonly dataSource: DataSource,
     @InjectRepository(RoleAccessDetailEntity)
     private readonly roleAccessDetailsRepository: Repository<RoleAccessDetailEntity>,
-    @InjectRepository(RoleAccessOptionEntity)
-    private readonly roleAccessOptionRepository: Repository<RoleAccessOptionEntity>,
+    // @InjectRepository(RoleAccessOptionEntity)
+    // private readonly roleAccessOptionRepository: Repository<RoleAccessOptionEntity>,
     @InjectRepository(RoleAccessTypeEntity)
     private readonly roleAccessTypeRepository: Repository<RoleAccessTypeEntity>,
+    @InjectRepository(RoleLineEntity)
+    private readonly roleLineEntityRepository: Repository<RoleLineEntity>,
   ) {}
 
   private getRepository<T extends ObjectLiteral>(
@@ -41,6 +43,24 @@ export class RoleAccessDetailsService {
     } catch (error) {
       throw new Error(`Repository for entity '${entity}' not found.`);
     }
+  }
+
+  async getModelsOptions(): Promise<{ value: string; label: string }[]> {
+    const repo = this.getRepository(RoleLineEntity);
+    const types = await repo
+      .createQueryBuilder('RoleLineEntity') // Alias for RoleLineEntity
+      .select('MIN(RoleLineEntity.id)', 'id')
+      .addSelect('RoleLineEntity.accesskey', 'accesskey')
+      .where('RoleLineEntity.typeid = :typeid', { typeid: 1 })
+      .groupBy('RoleLineEntity.accesskey')
+      .getRawMany();
+
+    const result = types.map((item) => ({
+      value: item.accesskey,
+      label: item.accesskey,
+    }));
+
+    return result;
   }
 
   async create<T extends ObjectLiteral>(
@@ -101,19 +121,7 @@ export class RoleAccessDetailsService {
     return { message: `Record with ID ${id} deleted successfully` };
   }
 
-  // private async getAccessNames(access: string[]): Promise<string[]> {
-  //   const options = await this.roleAccessOptionRepository.find({
-  //     where: { id: In(access.map((id) => parseInt(id))) },
-  //   });
-
-  //   // Create a map for quick lookup
-  //   const optionMap = new Map(
-  //     options.map((option) => [option.id, option.name]),
-  //   );
-
-  //   // Map the access array in the original order
-  //   return access.map((id) => optionMap.get(parseInt(id)) || 'Unknown');
-  // }
+  // ---------------------- Private Function
 
   private async getTypeNames(typeid: number): Promise<string> {
     const repo = this.getRepository(RoleAccessTypeEntity);

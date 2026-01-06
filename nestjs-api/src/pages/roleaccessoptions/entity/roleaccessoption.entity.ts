@@ -12,6 +12,6 @@ export class RoleAccessOptionEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50, default: '' })
   name: string;
 }

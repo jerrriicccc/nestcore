@@ -1,5 +1,5 @@
 {
-  "name": "typescript-app",
+  "name": "nestcore",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

@@ -1,10 +1,11 @@
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Row, Col } from "react-bootstrap";
 import SubHeader from "../../components/layout/SubHeader";
 import RoleForm from "./RoleForm";
 import GlobalRecordAccessForm from "./GlobalRecordAccessForm";
 import ModuleAccessForm from "./ModuleAccessForm";
+import ModelsInModuleModal from "./ModelsInModuleModal";
 import AuthorizationAlert from "../authorization/AuthorizationAlert";
 import { defaultState, navButtons, modelConfig, path, useLocalValidation } from "./PageSettings";
 import useModel from "../../lib/use-model";
@@ -60,8 +61,6 @@ const Controller = () => {
   //   functionName: getAllAccessOptionModel.get,
   //   args: { requestData: { model: "appointmentstatuses" } },
   // });
-
-  console.log("models", models);
 
   // Data Fetching Functions
   const getGlobalRAccess = () => {
@@ -282,6 +281,19 @@ const Controller = () => {
     availableOptions: item.availableOptions || [], // Available options from backend
   }));
 
+  // Modal state for Models view
+  const [showModelsModal, setShowModelsModal] = useState(false);
+  const [selectedModuleRow, setSelectedModuleRow] = useState<any | null>(null);
+
+  const openModelsModal = (row: any) => {
+    setSelectedModuleRow(row);
+    setShowModelsModal(true);
+  };
+  const closeModelsModal = () => {
+    setSelectedModuleRow(null);
+    setShowModelsModal(false);
+  };
+
   return (
     <Fragment>
       <SubHeader title={`Role Form | ${mode.toUpperCase()}`} buttons={navButtons} actions={{ btnBack: handleBack }} />
@@ -302,7 +314,15 @@ const Controller = () => {
           />
         </Col>
       </Row>
-      <ModuleAccessForm data={mdataWithEmptySelections} actions={{ onChange: moduleAccessOnChange, onMenuOpen: () => {} }} selectOptions={moduleSelectOptions} />
+      <ModuleAccessForm data={mdataWithEmptySelections} actions={{ onChange: moduleAccessOnChange, onMenuOpen: () => {}, onOpenModelsModal: openModelsModal }} selectOptions={moduleSelectOptions} />
+
+      <ModelsInModuleModal
+        show={showModelsModal}
+        onHide={closeModelsModal}
+        data={selectedModuleRow ? [selectedModuleRow] : []}
+        selectOptions={moduleSelectOptions}
+        actions={{ onChange: moduleAccessOnChange }}
+      />
     </Fragment>
   );
 };

@@ -6,12 +6,15 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import PeopleIcon from "@mui/icons-material/People";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import { clearToken } from "../../lib/token-service";
+import { useNavigate } from "react-router-dom";
 
 export interface SidebarItem {
   link: string;
   caption: string;
   icon?: React.ReactNode;
   children?: SidebarItem[];
+  isAction?: boolean; // Add flag for action items
 }
 
 export const DashboardItems: SidebarItem[] = [{ link: "/dashboard", caption: "Dashboard", icon: <DashboardIcon /> }];
@@ -29,12 +32,18 @@ export const userMenuItems: SidebarItem[] = [
   { link: "/rolelist", caption: "Roles", icon: <ManageAccountsIcon /> },
 ];
 
+export const accountMenuItems: SidebarItem[] = [
+  { link: "/switchrole/update", caption: "Switch Role", icon: <PeopleIcon /> },
+  { link: "logout", caption: "Logout", icon: <ManageAccountsIcon />, isAction: true },
+];
+
 const drawerWidth = 240; // Sidebar width
 const appBarHeight = 56; // AppBar height
 
 const Sidebar: React.FC = () => {
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleToggle = (menu: string) => {
     setOpenMenus((prev) => ({
@@ -43,14 +52,34 @@ const Sidebar: React.FC = () => {
     }));
   };
 
-  const renderMenuItem = (item: SidebarItem) => (
-    <ListItemButton key={item.link} component={Link} to={item.link} selected={location.pathname === item.link}>
-      <Box display="flex" alignItems="center" gap={1}>
-        {item.icon}
-        <ListItemText primary={item.caption} />
-      </Box>
-    </ListItemButton>
-  );
+  const handleLogout = () => {
+    clearToken();
+    navigate("/");
+  };
+
+  const renderMenuItem = (item: SidebarItem) => {
+    // Handle logout action separately
+    if (item.isAction && item.link === "logout") {
+      return (
+        <ListItemButton key={item.link} onClick={handleLogout}>
+          <Box display="flex" alignItems="center" gap={1}>
+            {item.icon}
+            <ListItemText primary={item.caption} />
+          </Box>
+        </ListItemButton>
+      );
+    }
+
+    // Regular link items
+    return (
+      <ListItemButton key={item.link} component={Link} to={item.link} selected={location.pathname === item.link}>
+        <Box display="flex" alignItems="center" gap={1}>
+          {item.icon}
+          <ListItemText primary={item.caption} />
+        </Box>
+      </ListItemButton>
+    );
+  };
 
   return (
     <Drawer
@@ -89,42 +118,6 @@ const Sidebar: React.FC = () => {
           </List>
         </Collapse>
 
-        {/* Services  */}
-        {/* <ListItemButton onClick={() => handleToggle("services")}>
-          <ListItemText primary="Services" />
-          {openMenus["services"] ? <ExpandLess /> : <ExpandMore />}
-        </ListItemButton>
-        <Collapse in={openMenus["services"]} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {servicesMenuItems.map((subItem) => (
-              <ListItemButton key={subItem.link} sx={{ pl: 4 }} component={Link} to={subItem.link} selected={location.pathname === subItem.link}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  {subItem.icon}
-                  <ListItemText primary={subItem.caption} />
-                </Box>
-              </ListItemButton>
-            ))}
-          </List>
-        </Collapse> */}
-
-        {/* Workflow Settings  */}
-        {/* <ListItemButton onClick={() => handleToggle("workflowsettings")}>
-          <ListItemText primary="Workflow" />
-          {openMenus["workflowsettings"] ? <ExpandLess /> : <ExpandMore />}
-        </ListItemButton>
-        <Collapse in={openMenus["workflowsettings"]} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {workflowMenuItems.map((subItem) => (
-              <ListItemButton key={subItem.link} sx={{ pl: 4 }} component={Link} to={subItem.link} selected={location.pathname === subItem.link}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  {subItem.icon}
-                  <ListItemText primary={subItem.caption} />
-                </Box>
-              </ListItemButton>
-            ))}
-          </List>
-        </Collapse> */}
-
         {ReportItems.map((item) => renderMenuItem(item))}
 
         {/* System Users */}
@@ -136,6 +129,28 @@ const Sidebar: React.FC = () => {
           <List component="div" disablePadding>
             {userMenuItems.map((subItem) => (
               <ListItemButton key={subItem.link} sx={{ pl: 4 }} component={Link} to={subItem.link} selected={location.pathname === subItem.link}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  {subItem.icon}
+                  <ListItemText primary={subItem.caption} />
+                </Box>
+              </ListItemButton>
+            ))}
+          </List>
+        </Collapse>
+
+        {/* Accounts  */}
+        <ListItemButton onClick={() => handleToggle("accounts")}>
+          <ListItemText primary="Account" />
+          {openMenus["accounts"] ? <ExpandLess /> : <ExpandMore />}
+        </ListItemButton>
+        <Collapse in={openMenus["accounts"]} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {accountMenuItems.map((subItem) => (
+              <ListItemButton
+                key={subItem.link}
+                sx={{ pl: 4 }}
+                {...(subItem.isAction ? { onClick: subItem.link === "logout" ? handleLogout : undefined } : { component: Link, to: subItem.link, selected: location.pathname === subItem.link })}
+              >
                 <Box display="flex" alignItems="center" gap={1}>
                   {subItem.icon}
                   <ListItemText primary={subItem.caption} />

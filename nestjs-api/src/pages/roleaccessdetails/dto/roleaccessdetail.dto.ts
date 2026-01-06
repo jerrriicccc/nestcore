@@ -31,9 +31,10 @@ export class BaseDto {
   @IsString({ each: true })
   access: string[];
 
-  @IsString()
   @IsOptional()
-  models?: string;
+  @IsArray()
+  @IsString({ each: true })
+  models?: string[];
 }
 
 export class CreateDto extends BaseDto {}

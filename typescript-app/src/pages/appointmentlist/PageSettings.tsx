@@ -1,5 +1,11 @@
 export const navButton: any[] = [
   {
+    type: "button",
+    label: "Search",
+    name: "btnTglSearch",
+    path: "",
+  },
+  {
     name: "btnCreate",
     label: "Create",
     type: "link" as "link",

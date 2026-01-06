@@ -10,9 +10,9 @@ export const modelConfig = { read: "/getcard", update: "/updatecard", create: "/
 
 export const optionState = { data: [], meta: {} };
 export const optionEndPoints = {
-  type: "/getoption/roleaccesstypes",
-  access: "/getoption/accessoptions",
-  model: "/getoption/models",
+  type: "/getoption/getroleaccesstypes",
+  access: "/getoption/getaccessoptions",
+  model: "/getoption/getmodels",
 };
 
 interface useLocalValidationProps {

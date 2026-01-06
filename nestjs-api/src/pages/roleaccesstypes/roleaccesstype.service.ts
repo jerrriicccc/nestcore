@@ -22,15 +22,36 @@ export class RoleAccessTypesService {
     }
   }
 
+  // async getRoleAccessTypesOptions(): Promise<
+  //   { value: string; label: string }[]
+  // > {
+  //   const repo = this.getRepository(RoleAccessTypeEntity);
+  //   const list = await repo.find();
+
+  //   const result = list.map((item) => ({
+  //     value: String(item.id),
+  //     label: item.name,
+  //   }));
+
+  //   return result;
+  // }
+
   async getRoleAccessTypesOptions(): Promise<
     { value: string; label: string }[]
   > {
     const repo = this.getRepository(RoleAccessTypeEntity);
-    const list = await repo.find();
 
-    return list.map((item) => ({
-      value: String(item.id),
-      label: item.name,
+    const list = await repo
+      .createQueryBuilder('roleAccessTypeEntity')
+      .select('roleAccessTypeEntity.id', 'value')
+      .addSelect('roleAccessTypeEntity.name', 'label')
+      .getRawMany();
+
+    const result = list.map((item) => ({
+      value: String(item.value),
+      label: item.label,
     }));
+
+    return result;
   }
 }

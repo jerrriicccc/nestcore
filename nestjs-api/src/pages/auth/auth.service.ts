@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserEntity } from '../users/entity/user.entity';
 import { CreateDto } from '../users/dto/user.dto';
 import { randomUUID } from 'crypto';
-import { MailService } from '../email/mail.service';
+import { EmailService } from '../email/email.service';
 import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
 import { generateRBACToken } from 'src/component/validateaccess/validate-rbactoken';
@@ -21,7 +21,7 @@ import { RBAC_TREE } from 'src/lib/constants';
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly mailService: MailService,
+    private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -121,7 +121,7 @@ export class AuthService {
 
       await this.userRepository.save(user);
 
-      await this.mailService.sendVerificationEmail(
+      await this.emailService.sendVerificationEmail(
         user.email,
         user.verificationtoken || '',
       );

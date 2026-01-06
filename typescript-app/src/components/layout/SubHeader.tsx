@@ -4,6 +4,8 @@ import { DashboardItems } from "./Sidebar";
 import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DetailsIcon from "@mui/icons-material/Details";
+import SearchIcon from "@mui/icons-material/Search";
+
 import { useTitle } from "../../context/TitleContext";
 import { useEffect } from "react";
 
@@ -73,7 +75,17 @@ export default function SubHeader({ buttons = [], searchPane, title = "", action
               className="btn-primary"
               onClick={() => handleButtonClick(btn)}
               sx={{ borderRadius: 5, px: 2, display: "flex", alignItems: "center", justifyContent: "center" }}
-              startIcon={btn.name === "btnBack" ? <ArrowLeftIcon /> : btn.name === "btnCreate" ? <AddCircleOutlineIcon /> : btn.name === "btnAccessDet" ? <DetailsIcon /> : null}
+              startIcon={
+                btn.name === "btnBack" ? (
+                  <ArrowLeftIcon />
+                ) : btn.name === "btnCreate" ? (
+                  <AddCircleOutlineIcon />
+                ) : btn.name === "btnAccessDet" ? (
+                  <DetailsIcon />
+                ) : btn.name === "btnTglSearch" ? (
+                  <SearchIcon />
+                ) : null
+              }
             >
               {btn.label}
             </Button>

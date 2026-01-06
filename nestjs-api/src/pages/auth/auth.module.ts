@@ -10,7 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { MailModule } from 'src/pages/email/mail.module';
+import { EmailModule } from 'src/pages/email/email.module';
 import { RateLimitGuard } from './rate-limit.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 
@@ -19,7 +19,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     forwardRef(() => UserModule),
     TypeOrmModule.forFeature([UserEntity]),
     PassportModule,
-    MailModule,
+    EmailModule,
     ScheduleModule.forRoot(),
 
     JwtModule.registerAsync({

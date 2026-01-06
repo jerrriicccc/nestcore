@@ -14,4 +14,5 @@ export const RBAC_TREE: { [key: string]: string } = {
   rolelines: "roles",
   roleaccessdetails: "roleaccessdetails",
   users: "users",
+  accounts: "accounts",
 };

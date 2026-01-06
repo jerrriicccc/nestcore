@@ -39,6 +39,7 @@ interface ModuleAccessFormProps {
   actions?: {
     onChange: (object: any) => void;
     onMenuOpen: (accesskey: string) => void;
+    onOpenModelsModal?: (row: DataRow) => void;
   };
   selectOptions?: {
     [key: string]: OptionType[];
@@ -105,8 +106,8 @@ const findMatchingValues = (accessValues: string[] | undefined, processedOptions
 // Component
 // ============================================================================
 
-const ModuleAccessForm = ({ data = [], selectOptions, actions, ...restProps }: ModuleAccessFormProps) => {
-  const { onMenuOpen = () => {}, onChange = () => {} } = actions || {};
+const ModuleAccessForm = ({ data = [], selectOptions, actions }: ModuleAccessFormProps) => {
+  const { onMenuOpen = () => {}, onChange = () => {}, onOpenModelsModal = () => {} } = actions || {};
 
   // --------------------------------------------------------------------------
   // Multi-Select Input Renderer
@@ -163,12 +164,19 @@ const ModuleAccessForm = ({ data = [], selectOptions, actions, ...restProps }: M
   // Render
   // --------------------------------------------------------------------------
 
+  // Build recordActions for table buttons
+  const recordActions = {
+    btnGetModuleModel: (_event: any, row: DataRow) => {
+      onOpenModelsModal(row);
+    },
+  } as any;
+
   return (
     <Card className="card shadow-sm p-4 mx-4">
       <div className="p-3">
         <h4>Module Access</h4>
       </div>
-      <RegularTable settings={moduleTable} data={tableData} tableProps={TABLE_PROPS} recordActions={{}} />
+      <RegularTable settings={moduleTable} data={tableData} tableProps={TABLE_PROPS} recordActions={recordActions} />
     </Card>
   );
 };

@@ -51,21 +51,22 @@ export class RoleAccessDetailsController {
     private readonly rolesService: RolesService,
   ) {}
 
-  @Get('getoption/:type')
+  @Get('getoption/:labelName')
   async getOptionsByType(
-    @Param('type') type: string,
+    @Param('labelName') labelName: string,
   ): Promise<{ data: { value: string; label: string }[] }> {
     const optionsMap: Record<
       string,
       () => Promise<{ value: string; label: string }[]>
     > = {
-      roleaccesstypes: () =>
+      getroleaccesstypes: () =>
         this.roleAccessTypesService.getRoleAccessTypesOptions(),
-      accessoptions: () => this.roleAccessOptionsService.getRoleAccessOptions(),
-      // models: () => this.roleAccessDetailsService.getModelsOptions(),
+      getaccessoptions: () =>
+        this.roleAccessOptionsService.getRoleAccessOptions(),
+      getmodels: () => this.roleAccessDetailsService.getModelsOptions(),
     };
 
-    const getOptionsFn = optionsMap[type];
+    const getOptionsFn = optionsMap[labelName];
     const data = await getOptionsFn();
     return { data };
   }
@@ -117,20 +118,73 @@ export class RoleAccessDetailsController {
     );
     const getRoleId = await this.rolesService.findAll(RoleEntity);
 
-    // Loop through roles and create RoleLine for each
     for (const getrole of getRoleId) {
+      if (result.typeid === 2 && result.models && result.models.length > 0) {
+        for (const model of result.models) {
+          const createRoleLineDto: CreateRoleLineDto = {
+            roleid: getrole.id,
+            typeid: result.typeid,
+            accesskey: result.accesskey,
+            parentkey: model,
+            accessvalue: [],
+            grantypeid: 0,
+          };
+          await this.roleLineService.create(RoleLineEntity, createRoleLineDto);
+        }
+      } else {
+        const createRoleLineDto: CreateRoleLineDto = {
+          roleid: getrole.id,
+          typeid: result.typeid,
+          accesskey: result.accesskey || '',
+          parentkey: '',
+          accessvalue: [],
+          grantypeid: 0,
+        };
+        await this.roleLineService.create(RoleLineEntity, createRoleLineDto);
+      }
+    }
+
+    return { data: result };
+  }
+
+  // @Post('newcard')
+  // @ValidateAccessMethod({ RBACModule: 'roleaccessdetails' })
+  // async create(@Body() createDto: CreateDto, @Req() req: Request) {
+  //   if (!isGranted(req)) {
+  //     throw new ForbiddenException(getValidationError(req) || 'Access denied');
+  //   }
+  //   if (!hasCreateAccess(req)) return denyRoleBasedAccess();
+
+  //   const result = await this.roleAccessDetailsService.create(
+  //     RoleAccessDetailEntity,
+  //     createDto,
+  //   );
+
+  //   // Delegate role line creation to service
+  //   await this.distributeNewAccessToAllRoles(result['id']);
+
+  //   return { data: result };
+  // }
+
+  private async distributeNewAccessToAllRoles(
+    roleAccessDetail: RoleAccessDetailEntity,
+  ): Promise<void> {
+    const roles = await this.rolesService.findAll(RoleEntity);
+
+    const createRoleLinePromises = roles.map((role) => {
       const createRoleLineDto: CreateRoleLineDto = {
-        roleid: getrole.id,
-        typeid: result.typeid,
-        accesskey: result.accesskey || '',
+        roleid: role.id,
+        typeid: roleAccessDetail.typeid,
+        accesskey: roleAccessDetail.accesskey || '',
         parentkey: '',
         accessvalue: [],
         grantypeid: 0,
       };
-      await this.roleLineService.create(RoleLineEntity, createRoleLineDto);
-    }
+      return this.roleLineService.create(RoleLineEntity, createRoleLineDto);
+    });
 
-    return { data: result };
+    // Execute all creates in parallel for better performance
+    await Promise.all(createRoleLinePromises);
   }
 
   @Put('updatecard')

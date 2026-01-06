@@ -28,13 +28,31 @@ export class RoleAccessOptionsService {
     }
   }
 
+  // async getRoleAccessOptions(): Promise<{ value: string; label: string }[]> {
+  //   const repo = this.getRepository(RoleAccessOptionEntity);
+  //   const list = await repo.find();
+
+  //   const result = list.map((item) => ({
+  //     value: String(item.id),
+  //     label: item.name,
+  //   }));
+
+  //   return result;
+  // }
+
   async getRoleAccessOptions(): Promise<{ value: string; label: string }[]> {
     const repo = this.getRepository(RoleAccessOptionEntity);
-    const list = await repo.find();
 
-    return list.map((item) => ({
-      value: String(item.id),
-      label: item.name,
+    const list = await repo
+      .createQueryBuilder('roleAccessOptionEntity')
+      .select('roleAccessOptionEntity.id', 'value')
+      .addSelect('roleAccessOptionEntity.name', 'label')
+      .getRawMany();
+
+    const result = list.map((item) => ({
+      value: String(item.value),
+      label: item.label,
     }));
+    return result;
   }
 }

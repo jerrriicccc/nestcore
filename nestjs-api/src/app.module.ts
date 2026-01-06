@@ -22,7 +22,7 @@ import { AppointmentWorkflowSettingEntity } from './pages/appointmentworkflowset
 // MODULES
 import { UserModule } from './pages/users/user.module';
 import { AuthModule } from './pages/auth/auth.module';
-import { MailModule } from './pages/email/mail.module';
+import { EmailModule } from './pages/email/email.module';
 import { RolesModule } from './pages/roles/role.module';
 import { UserStatusesModule } from './pages/userstatuses/userstatuses.module';
 import { RoleAccessDetailsModule } from './pages/roleaccessdetails/roleaccessdetail.module';
@@ -34,6 +34,7 @@ import { AppointmentStatusModule } from './pages/appointmentstatuses/appointment
 import { AppointmentNumberModule } from './pages/appointmentnumbers/appointmentnumber.module';
 import { AppointmentSettingModule } from './pages/appointmentsettings/appointmentsetting.module';
 import { AppointmentWorkflowSettingModule } from './pages/appointmentworkflowsettings/appointmentworkflowsetting.module';
+import { AccountModule } from './pages/accounts/account.module';
 
 @Module({
   imports: [
@@ -73,7 +74,7 @@ import { AppointmentWorkflowSettingModule } from './pages/appointmentworkflowset
     }),
 
     AuthModule,
-    MailModule,
+    EmailModule,
     UserModule,
     UserStatusesModule,
     RolesModule,
@@ -86,6 +87,7 @@ import { AppointmentWorkflowSettingModule } from './pages/appointmentworkflowset
     AppointmentNumberModule,
     AppointmentSettingModule,
     AppointmentWorkflowSettingModule,
+    AccountModule,
   ],
 })
 export class AppModule implements NestModule {

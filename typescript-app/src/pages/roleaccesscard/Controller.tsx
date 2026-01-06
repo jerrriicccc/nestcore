@@ -35,10 +35,10 @@ const Controller = () => {
     args: "access",
   });
 
-  // useInitializeData({
-  //   functionName: getModelOptionsStatus,
-  //   args: "model",
-  // });
+  useInitializeData({
+    functionName: getModelOptionsStatus,
+    args: "model",
+  });
 
   const getRoleAccessById = useDataById({
     callbackFunction: roleAccessModel.get,
@@ -111,7 +111,7 @@ const Controller = () => {
       <SubHeader title={`Role Access Form | ${mode.toUpperCase()}`} buttons={navButtons} actions={{ btnBack: handleBack }} />
       <AuthorizationAlert status={roleAccessStatus} dependsOn={["read", "create", "update"]} />
 
-      <RoleAccessForm data={roleAccess.data} onChange={handleChange} onSubmit={handleSubmit} selectOptions={{ type: roleAccessOptions.data, access: accessOptions.data }} />
+      <RoleAccessForm data={roleAccess.data} onChange={handleChange} onSubmit={handleSubmit} selectOptions={{ type: roleAccessOptions.data, access: accessOptions.data, model: modelOptions.data }} />
     </Fragment>
   );
 };

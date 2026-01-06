@@ -28,6 +28,26 @@ export const useDataStatusListener = ({ statusState, action, status, callbackFun
   }, [statusState]);
 };
 
+interface UseRedirectByDataStatusProps {
+  path: string;
+  statusState: any;
+  action?: string;
+  status?: string;
+}
+
+export const useRedirectByDataStatus = ({ path, statusState, action, status = "success" }: UseRedirectByDataStatusProps) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const matchesStatus = statusState.status === status;
+    const matchesAction = action ? statusState.action === action : true;
+
+    if (matchesStatus && matchesAction) {
+      navigate(path);
+    }
+  }, [statusState, action, status, path, navigate]);
+};
+
 interface UseRedirectOnErrorStatusProps {
   statusState: any;
   action: string;

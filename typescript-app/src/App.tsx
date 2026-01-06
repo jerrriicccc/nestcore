@@ -39,6 +39,7 @@ const RoleList = lazy(() => import("./pages/rolelist/Controller"));
 const RoleCard = lazy(() => import("./pages/rolecard/Controller"));
 const RoleAccessList = lazy(() => import("./pages/roleaccesslist/Controller"));
 const RoleAccessCard = lazy(() => import("./pages/roleaccesscard/Controller"));
+const SwitchRole = lazy(() => import("./pages/switchrole/Controller"));
 
 // Router config
 const router = createBrowserRouter([
@@ -198,6 +199,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SuspenseExt body={<AppintmentSettingCard />} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/switchrole/:mode",
+        element: (
+          <ProtectedRoute>
+            <SuspenseExt body={<SwitchRole />} />
           </ProtectedRoute>
         ),
       },

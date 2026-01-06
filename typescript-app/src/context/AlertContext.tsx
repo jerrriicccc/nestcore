@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from "react";
 
 type AlertSeverity = "success" | "error" | "warning" | "info";
 
@@ -10,8 +10,8 @@ interface AlertMessage {
 }
 
 interface AlertContextType {
-  alert: AlertMessage | null;
-  setAlert: (alert: AlertMessage | null) => void;
+  alertMessage: AlertMessage | null;
+  setAlertMessage: Dispatch<SetStateAction<AlertMessage | null>>;
 }
 
 const AlertContext = createContext<AlertContextType | undefined>(undefined);
@@ -25,7 +25,7 @@ export const useAlert = () => {
 };
 
 export const AlertProvider = ({ children }: { children: ReactNode }) => {
-  const [alert, setAlert] = useState<AlertMessage | null>(null);
+  const [alertMessage, setAlertMessage] = useState<AlertMessage | null>(null);
 
-  return <AlertContext.Provider value={{ alert, setAlert }}>{children}</AlertContext.Provider>;
+  return <AlertContext.Provider value={{ alertMessage, setAlertMessage }}>{children}</AlertContext.Provider>;
 };

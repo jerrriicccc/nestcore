@@ -1,10 +1,9 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType, OmitType } from '@nestjs/mapped-types';
 import {
   IsRequiredString,
   IsRequiredDate,
   IsRequiredNumber,
-  IsOptionalNumber,
-  IsOptionalString,
+  IsOptionalDate,
 } from '../../../utils/validation.util';
 
 export class BaseDto {
@@ -13,6 +12,9 @@ export class BaseDto {
 
   @IsRequiredString()
   firstname: string;
+
+  @IsOptionalDate()
+  datecreated?: string;
 }
 
 export class CreateDto extends BaseDto {}

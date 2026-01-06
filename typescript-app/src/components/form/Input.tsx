@@ -24,6 +24,7 @@ interface BaseInputProps {
   readOnly?: boolean;
   error?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export const TextInput: React.FC<BaseInputProps> = ({ name, label, data, onChange, placeholder = " ", readOnly = false, error, className }) => (

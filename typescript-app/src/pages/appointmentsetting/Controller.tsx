@@ -37,7 +37,7 @@ const Controller = () => {
   const { mode = "create" } = useParams<{ mode?: "create" | "update" }>();
   const [searchParamsById] = useSearchParams();
   const id = searchParamsById.get("id");
-  const { alert: alertMessage, setAlert: setAlertMessage } = useAlert();
+  const { alertMessage, setAlertMessage } = useAlert();
 
   useEffect(() => {
     setAlertMessage(null);
