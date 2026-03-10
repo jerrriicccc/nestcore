@@ -17,12 +17,16 @@ import { paginate } from 'nestjs-typeorm-paginate';
 import { AppointmentEntity } from './entity/appointment.entity';
 import { AppointmentNumberEntity } from '../appointmentnumbers/entity/appointmentnumber.entity';
 // COMPONENT
-import { createCurrentDate, formattedDate } from 'src/utils/date.util';
-import { AppointmentResponseDto } from './dto/appointments.dto';
+import {
+  createCurrentDate,
+  formattedDate,
+  // formattedDate,
+} from 'src/utils/date.util';
+// import { AppointmentResponseDto } from './dto/appointments.dto';
 
 @Injectable()
 export class AppointmentService {
-  private readonly DEFAULT_PAGE_LIMIT = 3;
+  private readonly DEFAULT_PAGE_LIMIT = 10;
 
   constructor(
     @InjectDataSource()
@@ -103,6 +107,7 @@ export class AppointmentService {
       data.map(async (data: any) => {
         return {
           ...data,
+          datecreated: formattedDate(data.datecreated),
         };
       }),
     );

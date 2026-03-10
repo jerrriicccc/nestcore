@@ -20,7 +20,7 @@ export class AuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
 
     const rbacToken = request.headers['X-Rbac-Token'];
-    // console.log('RBAC TOKEN RECEIVED:', rbacToken); // Debug: print RBAC token
+    // console.log('RBAC TOKEN RECEIVED:', rbacToken);
     if (rbacToken) {
       request['rbacToken'] = rbacToken;
     }

@@ -24,6 +24,7 @@ export const listTable = {
   columns: [
     { label: "Last Name", id: "lastname" },
     { label: "First Name", id: "firstname" },
+    { label: "Date Created", id: "datecreated" },
     { id: "id", hidden: true },
   ],
   buttons: [

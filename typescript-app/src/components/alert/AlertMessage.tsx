@@ -56,7 +56,7 @@ export const AlertMessages = ({ severity, title, message, alertKey }: AlertMessa
       }}
       spacing={2}
     >
-      <Slide in={open} direction="left" mountOnEnter unmountOnExit>
+      <Slide in={open} direction="down" mountOnEnter unmountOnExit>
         <div>
           <CustomAlert severity={severity} onClose={() => setOpen(false)}>
             <AlertTitle>{title}</AlertTitle>

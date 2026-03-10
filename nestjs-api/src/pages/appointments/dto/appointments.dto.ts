@@ -24,8 +24,8 @@ export class UpdateDto extends PartialType(BaseDto) {
 }
 
 // Response DTO for appointments with formatted dates
-export class AppointmentResponseDto {
-  id: number;
-  lastname: string;
-  firstname: string;
-}
+// export class AppointmentResponseDto {
+//   id: number;
+//   lastname: string;
+//   firstname: string;
+// }
